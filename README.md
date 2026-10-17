@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Operação Aprovação
 
-## Getting Started
+Plataforma web para planejar, organizar e acompanhar estudos para concursos públicos. O escopo do produto é planejamento, registros de estudo e revisões; não inclui aulas nem banco de questões.
 
-First, run the development server:
+## Stack
+
+- Next.js App Router e TypeScript
+- Tailwind CSS
+- shadcn/ui com componentes Base UI
+- Lucide React para ícones
+- Supabase Auth e Postgres
+- `@supabase/ssr` para sessões em cookies no servidor e no navegador
+
+## Desenvolvimento
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Supabase
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+O arquivo `.env.local` já aponta para o projeto Supabase **Operação Aprovação**. Ele contém somente o Project URL e a chave publishable, que pode ser usada pelo cliente do navegador. O arquivo é ignorado pelo Git.
 
-## Learn More
+Para outra máquina ou outro projeto, copie `.env.local.example` para `.env.local` e preencha `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Nunca coloque a secret/service-role key em variáveis `NEXT_PUBLIC_*` nem no cliente do navegador.
 
-To learn more about Next.js, take a look at the following resources:
+## Organização
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `src/app`: rotas, layout e estilos globais do App Router
+- `src/components`: shell, navegação e componentes compartilhados
+- `src/components/ui`: componentes shadcn/ui
+- `src/features/auth`: login, criação de conta e validação de credenciais
+- `src/features/today`: tela Hoje, consulta protegida, ações do plano inicial e regras de domínio
+- `src/lib/auth`: autorização de usuário no servidor
+- `src/lib/date`: calendário local baseado no fuso horário da conta
+- `src/lib/supabase`: criação dos clientes de Supabase no servidor e no navegador
+- `proxy.ts`: atualização de cookies de sessão Supabase nas requisições
+- `public`: assets estáticos
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+As telas Hoje e Planejamento exigem autenticação Supabase e consultam registros da conta autenticada. Quando não há registros, a pessoa pode escolher uma data e confirmar explicitamente a criação do plano inicial. O Planejamento mostra a semana, permite adicionar, editar, mover, ignorar e restaurar blocos, e apresenta uma prévia antes de reorganizar pendências. As alterações são persistidas no Postgres. As demais áreas ainda não implementadas permanecem desabilitadas.
 
-## Deploy on Vercel
+### Banco de dados
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+As migrations em `supabase/migrations` criam a fundação de Hoje e estendem `study_blocks` com os campos de planejamento. Também definem as funções transacionais, validações e políticas RLS. Não inserem linhas de demonstração e já foram aplicadas no projeto Supabase ligado a este repositório. Para configurar outro ambiente:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm dlx supabase@latest link --project-ref mnupjnlbsjsclxwlduon
+pnpm dlx supabase@latest db push
+```
+
+O comando exige que o Supabase CLI esteja vinculado ao projeto e que exista uma sessão/permissão de banco válida. Também é possível executar o conteúdo da migration pelo SQL Editor do projeto. Não use a chave service-role no app.
+
+Validação local:
+
+```bash
+pnpm lint
+pnpm exec tsc --noEmit
+pnpm test
+pnpm build
+```
