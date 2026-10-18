@@ -12,11 +12,10 @@ import {
   Trophy,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SignOutButton } from "@/components/sign-out-button";
 
-type SidebarItem = "hoje" | "planejamento" | "materias" | "revisoes" | "concursos" | "registros" | "caderno-de-erros" | "meu-progresso";
+type SidebarItem = "hoje" | "planejamento" | "materias" | "revisoes" | "concursos" | "registros" | "caderno-de-erros" | "meu-progresso" | "configuracoes";
 
 type SidebarProps = {
   email: string;
@@ -121,17 +120,11 @@ export function Sidebar({ email, activeItem = "hoje" }: SidebarProps) {
 
       <div className="mt-auto pt-6">
         <Separator className="mb-4" />
-        <Button
-          type="button"
-          variant="ghost"
-          disabled
-          title="Configurações: disponível em uma próxima etapa."
-          className="h-11 w-full justify-start gap-3 px-3 text-sm font-medium text-muted-foreground"
-        >
-          <Settings aria-hidden="true" className="size-4" />
-          Configurações
-          <span className="ml-auto text-[10px] font-medium">Em breve</span>
-        </Button>
+        <Link href="/configuracoes" aria-current={activeItem === "configuracoes" ? "page" : undefined}
+          className={`flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring ${activeItem === "configuracoes" ? activeClass : "text-muted-foreground hover:bg-muted"}`}>
+          <Settings aria-hidden="true" className="size-4" />Configurações
+          {activeItem === "configuracoes" ? <span aria-hidden="true" className="ml-auto size-1.5 rounded-full bg-primary" /> : null}
+        </Link>
         <div className="mt-3 flex items-center gap-3 px-2">
           <Avatar className="size-9">
             <AvatarFallback className="bg-secondary text-xs font-bold text-secondary-foreground">{getInitials(email)}</AvatarFallback>

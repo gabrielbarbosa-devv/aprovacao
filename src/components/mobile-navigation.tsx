@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "@/components/sidebar";
 
-export function MobileNavigation({ email, activeItem }: { email: string; activeItem?: "hoje" | "planejamento" | "materias" | "revisoes" | "concursos" | "registros" | "caderno-de-erros" | "meu-progresso" }) {
+export function MobileNavigation({ email, activeItem }: { email: string; activeItem?: "hoje" | "planejamento" | "materias" | "revisoes" | "concursos" | "registros" | "caderno-de-erros" | "meu-progresso" | "configuracoes" }) {
   return (
     <Sheet>
       <SheetTrigger render={<Button variant="outline" size="icon" aria-label="Abrir navegação" className="lg:hidden" />}>
