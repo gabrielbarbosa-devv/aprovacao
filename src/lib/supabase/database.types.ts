@@ -179,6 +179,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      archive_subject: {
+        Args: { p_expected_future_blocks: number; p_subject_id: string }
+        Returns: string
+      }
       apply_schedule_reorganization: {
         Args: { p_changes: Json; p_expected: Json }
         Returns: string

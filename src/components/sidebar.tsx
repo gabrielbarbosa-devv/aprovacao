@@ -15,11 +15,10 @@ import { SignOutButton } from "@/components/sign-out-button";
 
 type SidebarProps = {
   email: string;
-  activeItem?: "hoje" | "planejamento";
+  activeItem?: "hoje" | "planejamento" | "materias";
 };
 
 const unavailableItems = [
-  { label: "Matérias", icon: BookOpen },
   { label: "Revisões", icon: RefreshCw },
   { label: "Concursos", icon: Trophy },
 ] as const;
@@ -63,6 +62,15 @@ export function Sidebar({ email, activeItem = "hoje" }: SidebarProps) {
           <CalendarDays aria-hidden="true" className="size-4" />
           Planejamento
           {activeItem === "planejamento" ? <span aria-hidden="true" className="ml-auto size-1.5 rounded-full bg-primary" /> : null}
+        </Link>
+        <Link
+          href="/materias"
+          aria-current={activeItem === "materias" ? "page" : undefined}
+          className={`flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring ${activeItem === "materias" ? activeClass : "text-muted-foreground hover:bg-muted"}`}
+        >
+          <BookOpen aria-hidden="true" className="size-4" />
+          Matérias
+          {activeItem === "materias" ? <span aria-hidden="true" className="ml-auto size-1.5 rounded-full bg-primary" /> : null}
         </Link>
         {unavailableItems.map(({ label, icon: Icon }) => (
           <Button
