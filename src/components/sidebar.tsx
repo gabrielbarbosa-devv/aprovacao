@@ -3,6 +3,7 @@ import {
   BookOpen,
   CalendarDays,
   CircleDot,
+  ClipboardList,
   Home,
   RefreshCw,
   Settings,
@@ -15,7 +16,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 
 type SidebarProps = {
   email: string;
-  activeItem?: "hoje" | "planejamento" | "materias" | "revisoes" | "concursos";
+  activeItem?: "hoje" | "planejamento" | "materias" | "revisoes" | "concursos" | "registros";
 };
 
 function getInitials(email: string): string {
@@ -84,6 +85,15 @@ export function Sidebar({ email, activeItem = "hoje" }: SidebarProps) {
           <Trophy aria-hidden="true" className="size-4" />
           Concursos
           {activeItem === "concursos" ? <span aria-hidden="true" className="ml-auto size-1.5 rounded-full bg-primary" /> : null}
+        </Link>
+        <Link
+          href="/registros"
+          aria-current={activeItem === "registros" ? "page" : undefined}
+          className={`flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring ${activeItem === "registros" ? activeClass : "text-muted-foreground hover:bg-muted"}`}
+        >
+          <ClipboardList aria-hidden="true" className="size-4" />
+          Registros
+          {activeItem === "registros" ? <span aria-hidden="true" className="ml-auto size-1.5 rounded-full bg-primary" /> : null}
         </Link>
       </nav>
 

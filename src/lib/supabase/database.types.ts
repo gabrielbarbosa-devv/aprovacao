@@ -38,6 +38,17 @@ export type Database = {
           { foreignKeyName: "exam_topics_topic_id_user_id_fkey"; columns: ["topic_id", "user_id"]; isOneToOne: false; referencedRelation: "topics"; referencedColumns: ["id", "user_id"] },
         ]
       }
+      question_batches: {
+        Row: { id: string; user_id: string; operation_key: string; studied_on: string; subject_id: string; topic_id: string | null; source_type: string; source_label: string; exam_target_id: string | null; study_session_id: string | null; question_count: number; correct_count: number; duration_minutes: number | null; notes: string | null; replaces_session_totals: boolean; deleted_at: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; operation_key: string; studied_on: string; subject_id: string; topic_id?: string | null; source_type: string; source_label: string; exam_target_id?: string | null; study_session_id?: string | null; question_count: number; correct_count: number; duration_minutes?: number | null; notes?: string | null; replaces_session_totals?: boolean; deleted_at?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; operation_key?: string; studied_on?: string; subject_id?: string; topic_id?: string | null; source_type?: string; source_label?: string; exam_target_id?: string | null; study_session_id?: string | null; question_count?: number; correct_count?: number; duration_minutes?: number | null; notes?: string | null; replaces_session_totals?: boolean; deleted_at?: string | null; created_at?: string; updated_at?: string }
+        Relationships: [
+          { foreignKeyName: "question_batches_subject_id_user_id_fkey"; columns: ["subject_id", "user_id"]; isOneToOne: false; referencedRelation: "subjects"; referencedColumns: ["id", "user_id"] },
+          { foreignKeyName: "question_batches_topic_id_user_id_fkey"; columns: ["topic_id", "user_id"]; isOneToOne: false; referencedRelation: "topics"; referencedColumns: ["id", "user_id"] },
+          { foreignKeyName: "question_batches_exam_target_id_user_id_fkey"; columns: ["exam_target_id", "user_id"]; isOneToOne: false; referencedRelation: "exam_targets"; referencedColumns: ["id", "user_id"] },
+          { foreignKeyName: "question_batches_study_session_id_user_id_fkey"; columns: ["study_session_id", "user_id"]; isOneToOne: false; referencedRelation: "study_sessions"; referencedColumns: ["id", "user_id"] },
+        ]
+      }
       study_sessions: {
         Row: { id: string; user_id: string; block_id: string | null; topic_id: string; operation_key: string; studied_on: string; duration_minutes: number; question_count: number; correct_count: number; notes: string | null; deleted_at: string | null; created_at: string; updated_at: string }
         Insert: { id?: string; user_id: string; block_id?: string | null; topic_id: string; operation_key: string; studied_on: string; duration_minutes: number; question_count?: number; correct_count?: number; notes?: string | null; deleted_at?: string | null; created_at?: string; updated_at?: string }
@@ -239,6 +250,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      save_question_batch: { Args: { p_batch_id: string | null; p_operation_key: string; p_studied_on: string; p_subject_id: string; p_topic_id: string | null; p_source_type: string; p_source_label: string; p_exam_target_id: string | null; p_study_session_id: string | null; p_question_count: number; p_correct_count: number; p_duration_minutes: number | null; p_notes: string | null; p_replaces_session_totals: boolean }; Returns: Json }
+      delete_question_batch: { Args: { p_batch_id: string }; Returns: string }
       save_exam_target: { Args: { p_target_id: string | null; p_exam_name: string; p_institution: string; p_role_title: string; p_jurisdiction: string; p_current_stage: string; p_priority: string; p_exam_date: string | null; p_application_deadline: string | null; p_official_url: string | null; p_notes: string | null; p_subject_ids: string[]; p_topic_ids: string[] }; Returns: Json }
       archive_topic: {
         Args: { p_expected_open_blocks: number; p_topic_id: string }

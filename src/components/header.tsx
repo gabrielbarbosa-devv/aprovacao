@@ -8,7 +8,7 @@ function getInitials(email: string): string {
   return name.split(/[._-]+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toLocaleUpperCase("pt-BR") || "OA";
 }
 
-export function Header({ email, activeItem }: { email: string; activeItem?: "hoje" | "planejamento" | "materias" | "revisoes" | "concursos" }) {
+export function Header({ email, activeItem }: { email: string; activeItem?: "hoje" | "planejamento" | "materias" | "revisoes" | "concursos" | "registros" }) {
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b bg-background px-4 sm:px-8 lg:h-[68px] lg:px-10">
       <div className="flex items-center gap-3">

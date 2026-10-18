@@ -93,6 +93,7 @@ export function StudySessionDialog({ topics, today, selectedBlock = null, sessio
       const dueDates = saved.reviewDates.map((date) => formatStudyDate(date, "short")).join(", ");
       toast.success(saved.status === "exists" ? "Este bloco já possui um registro ativo." : session ? "Registro atualizado." : "Estudo registrado.", {
         description: dueDates ? `Próximas revisões: ${dueDates}.` : undefined,
+        action: saved.sessionId ? { label: "Registrar questões", onClick: () => router.push(`/registros?sessionId=${saved.sessionId}`) } : undefined,
       });
       changeOpen(false);
       router.refresh();
