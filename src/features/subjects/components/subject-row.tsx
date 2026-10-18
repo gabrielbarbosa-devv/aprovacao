@@ -32,8 +32,8 @@ export function SubjectRow({ subject, activeSubjectIds, activeIndex }: { subject
   const content = <>
     <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${colorClass}`}><BookOpen aria-hidden="true" className="size-[18px]" /></span>
     <span className="min-w-0 flex-1">
-      <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground"><span className="truncate">{subject.name}</span>{archived ? <Badge variant="secondary">Arquivada</Badge> : null}</span>
-      <span className="mt-1 block text-xs text-muted-foreground">{subject.topics.length} {subject.topics.length === 1 ? "tópico" : "tópicos"}{statusLabel ? ` · ${statusLabel}` : ""}</span>
+      <span className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-semibold text-foreground"><span className="min-w-0 break-words [overflow-wrap:anywhere]">{subject.name}</span>{archived ? <Badge variant="secondary">Arquivada</Badge> : null}</span>
+      <span className="mt-1 block break-words text-xs leading-5 text-muted-foreground [overflow-wrap:anywhere]">{subject.topics.length} {subject.topics.length === 1 ? "tópico" : "tópicos"}{statusLabel ? ` · ${statusLabel}` : ""}</span>
     </span>
     <span className="hidden shrink-0 text-xs text-muted-foreground md:inline">{archived ? "Restaurar para abrir" : "Ver conteúdo"}</span>
     <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />

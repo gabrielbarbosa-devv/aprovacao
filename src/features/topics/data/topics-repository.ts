@@ -30,6 +30,18 @@ export const topicsRepository = {
       .eq("user_id", userId).in("topic_id", topicIds);
   },
 
+  getExamTopicLinks(supabase: TopicSupabaseClient, userId: string, topicIds: string[]) {
+    if (topicIds.length === 0) return Promise.resolve({ data: [], error: null });
+    return supabase.from("exam_topics").select("topic_id, exam_target_id")
+      .eq("user_id", userId).in("topic_id", topicIds);
+  },
+
+  getExamTargetNames(supabase: TopicSupabaseClient, userId: string, targetIds: string[]) {
+    if (targetIds.length === 0) return Promise.resolve({ data: [], error: null });
+    return supabase.from("exam_targets").select("id, exam_name, archived_at")
+      .eq("user_id", userId).in("id", targetIds);
+  },
+
   getOpenBlocksForUser(supabase: TopicSupabaseClient, userId: string, topicIds: string[]) {
     if (topicIds.length === 0) return Promise.resolve({ data: [], error: null });
     return supabase.from("study_blocks").select("topic_id, status, planned_date, planned_minutes, sort_order, created_at").eq("user_id", userId)

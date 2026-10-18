@@ -54,7 +54,7 @@ export function ExamTargetSheet({ target, open, onOpenChange, subjects, topics, 
             <SheetTitle className="pt-1 text-xl">{target.examName}</SheetTitle>
             <SheetDescription>{target.institution} · {target.roleTitle} · {target.jurisdiction}</SheetDescription>
           </SheetHeader>
-          <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5 sm:px-6">
+          <div className="min-h-0 min-w-0 flex-1 space-y-6 overflow-y-auto px-5 py-5 sm:px-6">
             <section aria-labelledby="exam-detail-data"><h3 id="exam-detail-data" className="text-sm font-semibold">Dados</h3><dl className="mt-3 grid gap-x-5 gap-y-4 sm:grid-cols-2">
               <Detail label="Etapa" value={stageLabels[target.currentStage]} /><Detail label="Prioridade pessoal" value={priorityLabels[target.priority]} />
               <Detail label="Data da prova" value={formatDate(target.examDate)} /><Detail label="Prazo de inscrição" value={formatDate(target.applicationDeadline)} />
@@ -66,13 +66,13 @@ export function ExamTargetSheet({ target, open, onOpenChange, subjects, topics, 
               {target.subjects.length > 0 ? <div className="mt-4 space-y-3">{target.subjects.map((subject) => {
                 const subjectTopics = target.topics.filter((topic) => topic.subjectId === subject.id);
                 return <div key={subject.id} className="rounded-xl border p-3"><div className="flex items-center gap-2 text-sm font-medium"><BookOpen aria-hidden="true" className="size-4 text-primary" />{subject.name}{subject.archivedAt ? <Badge variant="outline">Arquivada</Badge> : null}</div>
-                  {subjectTopics.length ? <ul className="mt-2 space-y-1.5 pl-6 text-sm text-muted-foreground">{subjectTopics.map((topic) => <li key={topic.id} className="flex justify-between gap-2"><span>{topic.title}</span><span className="shrink-0 text-xs">{topic.status === "dominado" ? "Dominado" : topic.status === "em_andamento" ? "Em andamento" : topic.status === "concluido" ? "Concluído" : topic.status === "revisando" ? "Revisando" : "Não iniciado"}</span></li>)}</ul> : <p className="mt-2 pl-6 text-xs text-muted-foreground">Nenhum tópico vinculado.</p>}
+                  {subjectTopics.length ? <ul className="mt-2 space-y-2 pl-6 text-sm text-muted-foreground">{subjectTopics.map((topic) => <li key={topic.id} className="grid min-w-0 gap-1 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-3"><span className="min-w-0 break-words leading-5 [overflow-wrap:anywhere]">{topic.title}</span><span className="text-xs text-muted-foreground sm:whitespace-nowrap">{topic.status === "dominado" ? "Dominado" : topic.status === "em_andamento" ? "Em andamento" : topic.status === "concluido" ? "Concluído" : topic.status === "revisando" ? "Revisando" : "Não iniciado"}</span></li>)}</ul> : <p className="mt-2 pl-6 text-xs text-muted-foreground">Nenhum tópico vinculado.</p>}
                 </div>;
               })}</div> : <p className="mt-4 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">Nenhuma matéria vinculada.</p>}
               {coverage.configured ? <p className="mt-3 text-xs text-muted-foreground">Cobertura baseada apenas nos tópicos vinculados marcados como dominados por você.</p> : <p className="mt-3 text-xs text-muted-foreground">Cobertura ainda não configurada: vincule tópicos do seu conteúdo para acompanhar o domínio.</p>}
             </section>
           </div>
-          <div className="flex flex-wrap justify-between gap-2 border-t bg-muted/20 px-5 py-4 sm:px-6">
+          <div className="shrink-0 flex flex-wrap justify-between gap-2 border-t bg-muted/20 px-5 py-4 sm:px-6">
             <Button variant="outline" onClick={() => setConfirmArchive(true)} disabled={busy} className="gap-2">{archived ? <RotateCcw aria-hidden="true" className="size-4" /> : <Archive aria-hidden="true" className="size-4" />}{archived ? "Restaurar" : "Arquivar"}</Button>
             {!archived ? <Button onClick={() => setEditing(true)} className="gap-2"><Pencil aria-hidden="true" className="size-4" />Editar</Button> : null}
           </div>
@@ -88,5 +88,5 @@ export function ExamTargetSheet({ target, open, onOpenChange, subjects, topics, 
   </>;
 }
 
-function Detail({ label, value }: { label: string; value: string }) { return <div><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 whitespace-pre-wrap text-sm font-medium">{value}</dd></div>; }
+function Detail({ label, value }: { label: string; value: string }) { return <div className="min-w-0"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 break-words text-sm font-medium leading-relaxed [overflow-wrap:anywhere]">{value}</dd></div>; }
 function formatDate(value: string | null): string { return value ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${value}T00:00:00Z`)) : "Não informada"; }

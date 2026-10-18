@@ -48,15 +48,15 @@ export function PlanningBlockSheet({ block, topics, today, onClose }: { block: P
   return (
     <>
       <Sheet open={Boolean(block)} onOpenChange={(open) => { if (!open) onClose(); }}>
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
-          <SheetHeader className="px-0">
+        <SheetContent side="right" className="w-full gap-0 overflow-hidden sm:max-w-lg">
+          <SheetHeader className="shrink-0 border-b px-5 py-5 sm:px-6">
             <SheetTitle>{editing ? "Editar bloco" : activeBlock.subject}</SheetTitle>
             <SheetDescription>{editing ? "Ajuste a data ou a duração planejada." : activeBlock.topic}</SheetDescription>
           </SheetHeader>
           {editing ? (
-            <form action={(formData) => update(activeBlock, activeBlock.status, formData)} className="space-y-4 px-4 pb-4">
+            <form action={(formData) => update(activeBlock, activeBlock.status, formData)} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
               <div className="space-y-2"><Label htmlFor="edit-topic">Tópico</Label>
-                <select id="edit-topic" name="topicId" defaultValue={activeBlock.topicId} required className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm">
+                <select id="edit-topic" name="topicId" defaultValue={activeBlock.topicId} required className="h-10 w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm">
                   {topics.map((topic) => <option key={topic.id} value={topic.id}>{topic.subject} · {topic.topic}</option>)}
                 </select>
               </div>
@@ -66,10 +66,10 @@ export function PlanningBlockSheet({ block, topics, today, onClose }: { block: P
               <div className="flex gap-2"><Button type="submit" disabled={pending}>{pending ? "Salvando…" : "Salvar alterações"}</Button><Button type="button" variant="outline" onClick={() => setEditing(false)}>Cancelar</Button></div>
             </form>
           ) : (
-            <div className="space-y-5 px-4 pb-4">
+            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
               <div className="flex flex-wrap gap-2"><Badge variant="secondary">{activeBlock.status.replaceAll("_", " ")}</Badge>{activeBlock.pinned ? <Badge variant="outline"><Pin className="size-3" /> Fixo</Badge> : null}</div>
               {activeBlock.status !== "ignorado" ? <div className="rounded-xl border bg-muted/20 p-3">
-                {activeBlock.studySession ? <p className="mb-3 text-sm text-muted-foreground">Registro salvo: {activeBlock.studySession.durationMinutes} min · {activeBlock.studySession.questionCount} questões. Você pode corrigir os dados.</p> : <p className="mb-3 text-sm text-muted-foreground">Ao concluir o estudo, registre o tempo e o resultado para agendar as revisões.</p>}
+                {activeBlock.studySession ? <p className="mb-3 break-words text-sm leading-relaxed text-muted-foreground">Registro salvo: {activeBlock.studySession.durationMinutes} min · {activeBlock.studySession.questionCount} questões. Você pode corrigir os dados.</p> : <p className="mb-3 break-words text-sm leading-relaxed text-muted-foreground">Ao concluir o estudo, registre o tempo e o resultado para agendar as revisões.</p>}
                 <Button type="button" variant={activeBlock.studySession ? "outline" : "default"} onClick={() => setSessionOpen(true)}>{activeBlock.studySession ? "Editar registro" : "Registrar resultado"}</Button>
                 <StudySessionDialog trigger={false} open={sessionOpen} onOpenChange={setSessionOpen} topics={sessionTopics} today={today} selectedBlock={{ id: activeBlock.id, topicId: activeBlock.topicId, subject: activeBlock.subject, topic: activeBlock.topic, durationMinutes: activeBlock.plannedMinutes }} session={activeBlock.studySession} />
               </div> : null}

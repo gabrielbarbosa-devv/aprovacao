@@ -17,11 +17,33 @@ export async function getSubjectTopicsPageData(subjectId: string): Promise<Subje
   ]);
   if (topicResult.error || moduleResult.error) throw new Error("Não foi possível carregar os tópicos desta matéria.");
   const rawTopics = topicResult.data ?? [];
-  const [blocksResult, guideResult] = await Promise.all([
+  const [blocksResult, guideResult, examTopicResult] = await Promise.all([
     topicsRepository.getOpenBlocksForUser(supabase, user.id, rawTopics.map((topic) => topic.id)),
     topicsRepository.getStudyGuides(supabase, user.id, rawTopics.map((topic) => topic.id)),
+    topicsRepository.getExamTopicLinks(supabase, user.id, rawTopics.map((topic) => topic.id)),
   ]);
-  if (blocksResult.error || guideResult.error) throw new Error("Não foi possível carregar o conteúdo de estudo desta matéria.");
+  if (blocksResult.error || guideResult.error || examTopicResult.error) throw new Error("Não foi possível carregar o conteúdo de estudo desta matéria.");
+
+  const examTopicLinks = examTopicResult.data ?? [];
+  const examTargetResult = await topicsRepository.getExamTargetNames(
+    supabase,
+    user.id,
+    [...new Set(examTopicLinks.map((link) => link.exam_target_id))],
+  );
+  if (examTargetResult.error) throw new Error("Não foi possível carregar os concursos relacionados a esta matéria.");
+  const examTargetById = new Map((examTargetResult.data ?? []).map((target) => [target.id, {
+    id: target.id,
+    name: target.exam_name,
+    archivedAt: target.archived_at,
+  }]));
+  const examTargetsByTopic = new Map<string, Array<{ id: string; name: string; archivedAt: string | null }>>();
+  for (const link of examTopicLinks) {
+    const target = examTargetById.get(link.exam_target_id);
+    if (!target) continue;
+    const linkedTargets = examTargetsByTopic.get(link.topic_id) ?? [];
+    linkedTargets.push(target);
+    examTargetsByTopic.set(link.topic_id, linkedTargets);
+  }
 
   const modules = (moduleResult.data ?? []).map((module) => ({
     id: module.id,
@@ -54,6 +76,7 @@ export async function getSubjectTopicsPageData(subjectId: string): Promise<Subje
     openStudyBlockCount: openBlockCount.get(topic.id) ?? 0,
     plannedStudyDate: plannedStudyDate.get(topic.id) ?? null,
     studyGuide: guidesByTopic.get(topic.id) ?? null,
+    relatedExamTargets: examTargetsByTopic.get(topic.id) ?? [],
   }));
   const activeTopics = topics.filter((topic) => topic.archivedAt === null);
   const activeTopicIds = new Set(activeTopics.map((topic) => topic.id));

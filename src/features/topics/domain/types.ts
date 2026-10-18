@@ -37,6 +37,7 @@ export type StudyTopic = {
   openStudyBlockCount: number;
   plannedStudyDate: string | null;
   studyGuide: StudyGuide | null;
+  relatedExamTargets: Array<{ id: string; name: string; archivedAt: string | null }>;
 };
 
 export type SubjectTopicsPageData = {
