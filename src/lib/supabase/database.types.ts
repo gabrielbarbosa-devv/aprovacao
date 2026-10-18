@@ -258,6 +258,14 @@ export type Database = {
         Row: {
           created_at: string
           daily_goal_minutes: number
+          notifications_study_enabled: boolean
+          notifications_reviews_enabled: boolean
+          notifications_pending_enabled: boolean
+          daily_reminder_time: string | null
+          reminder_lead_minutes: number
+          quiet_hours_start: string | null
+          quiet_hours_end: string | null
+          browser_push_enabled: boolean
           timezone: string
           updated_at: string
           user_id: string
@@ -266,6 +274,14 @@ export type Database = {
         Insert: {
           created_at?: string
           daily_goal_minutes?: number
+          notifications_study_enabled?: boolean
+          notifications_reviews_enabled?: boolean
+          notifications_pending_enabled?: boolean
+          daily_reminder_time?: string | null
+          reminder_lead_minutes?: number
+          quiet_hours_start?: string | null
+          quiet_hours_end?: string | null
+          browser_push_enabled?: boolean
           timezone?: string
           updated_at?: string
           user_id: string
@@ -274,6 +290,14 @@ export type Database = {
         Update: {
           created_at?: string
           daily_goal_minutes?: number
+          notifications_study_enabled?: boolean
+          notifications_reviews_enabled?: boolean
+          notifications_pending_enabled?: boolean
+          daily_reminder_time?: string | null
+          reminder_lead_minutes?: number
+          quiet_hours_start?: string | null
+          quiet_hours_end?: string | null
+          browser_push_enabled?: boolean
           timezone?: string
           updated_at?: string
           user_id?: string
@@ -281,11 +305,26 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: { id: string; user_id: string; category: string; title: string; body: string; target_url: string; related_entity_id: string | null; local_date: string; dedupe_key: string; scheduled_for: string; read_at: string | null; dismissed_at: string | null; resolved_at: string | null; push_sent_at: string | null; push_attempts: number; push_last_attempt_at: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; category: string; title: string; body: string; target_url: string; related_entity_id?: string | null; local_date: string; dedupe_key: string; scheduled_for: string; read_at?: string | null; dismissed_at?: string | null; resolved_at?: string | null; push_sent_at?: string | null; push_attempts?: number; push_last_attempt_at?: string | null; created_at?: string; updated_at?: string }
+        Update: { read_at?: string | null; dismissed_at?: string | null }
+        Relationships: []
+      }
+      notification_push_subscriptions: {
+        Row: { id: string; user_id: string; endpoint: string; p256dh: string; auth_secret: string; created_at: string; last_used_at: string | null }
+        Insert: { id?: string; user_id: string; endpoint: string; p256dh: string; auth_secret: string; created_at?: string; last_used_at?: string | null }
+        Update: never
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      sync_my_notifications: { Args: Record<PropertyKey, never>; Returns: number }
+      save_notification_preferences: { Args: { p_study_enabled: boolean; p_reviews_enabled: boolean; p_pending_enabled: boolean; p_daily_reminder_time: string; p_reminder_lead_minutes: number; p_quiet_hours_start: string | null; p_quiet_hours_end: string | null; p_browser_push_enabled: boolean }; Returns: undefined }
+      process_notification_queue: { Args: Record<PropertyKey, never>; Returns: number }
       save_question_batch: { Args: { p_batch_id: string | null; p_operation_key: string; p_studied_on: string; p_subject_id: string; p_topic_id: string | null; p_source_type: string; p_source_label: string; p_exam_target_id: string | null; p_study_session_id: string | null; p_question_count: number; p_correct_count: number; p_duration_minutes: number | null; p_notes: string | null; p_replaces_session_totals: boolean }; Returns: Json }
       delete_question_batch: { Args: { p_batch_id: string }; Returns: string }
       save_mistake_entry: { Args: { p_entry_id: string | null; p_operation_key: string; p_subject_id: string; p_topic_id: string | null; p_question_batch_id: string | null; p_reason: string; p_thought: string; p_correct_rule: string; p_next_step: string | null; p_external_reference: string | null; p_status: string }; Returns: Json }

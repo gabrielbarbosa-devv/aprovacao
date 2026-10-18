@@ -11,3 +11,7 @@ allow_dynamic_registration = true
 [functions.operacao-aprovacao-mcp]
 # The function performs OAuth protected-resource discovery before verifying user tokens.
 verify_jwt = false
+
+[functions.process-study-notifications]
+# Supabase Cron authenticates this endpoint with a private shared secret checked in code.
+verify_jwt = false

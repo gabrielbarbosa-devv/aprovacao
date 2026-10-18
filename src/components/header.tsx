@@ -2,6 +2,7 @@ import { CircleDot } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NotificationCenter } from "@/features/notifications/components/notification-center";
 
 function getInitials(email: string): string {
   const name = email.split("@")[0] ?? email;
@@ -17,6 +18,7 @@ export function Header({ email, activeItem }: { email: string; activeItem?: "hoj
         <span className="text-sm font-medium text-muted-foreground">Preparação para concursos públicos</span>
       </div>
       <div className="flex items-center gap-2">
+        <NotificationCenter />
         <ThemeToggle />
         <Avatar className="size-9">
           <AvatarFallback className="bg-secondary text-xs font-bold text-secondary-foreground">{getInitials(email)}</AvatarFallback>

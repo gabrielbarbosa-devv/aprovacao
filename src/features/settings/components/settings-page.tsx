@@ -13,11 +13,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { saveStudyPreferencesAction } from "@/features/settings/actions";
+import { NotificationPreferences } from "@/features/notifications/components/notification-preferences";
 import { WEEKDAY_OPTIONS } from "@/features/settings/domain/settings";
 import type { StudyPreferences } from "@/features/settings/domain/settings";
 
 type ExportKind = "json" | "csv";
-type SettingsPageData = { email: string; preferences: StudyPreferences };
+type SettingsPageData = { email: string; preferences: StudyPreferences; notificationPreferences: Parameters<typeof NotificationPreferences>[0]["initial"] };
 
 const TIMEZONE_SUGGESTIONS = [
   "America/Sao_Paulo", "America/Manaus", "America/Rio_Branco", "America/Noronha", "America/Belem",
@@ -140,6 +141,10 @@ export function SettingsPage({ data }: { data: SettingsPageData }) {
                 <Button render={<Link href="/planejamento" />} variant="outline" size="sm" className="w-fit shrink-0">Revisar planejamento</Button>
               </AlertDescription>
             </Alert>
+
+            <Separator className="my-7" />
+
+            <NotificationPreferences initial={data.notificationPreferences} timezone={timezone} weekdays={weekdays} />
 
             <Separator className="my-7" />
 
