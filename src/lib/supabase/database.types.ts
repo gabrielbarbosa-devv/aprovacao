@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      study_sessions: {
+        Row: { id: string; user_id: string; block_id: string | null; topic_id: string; operation_key: string; studied_on: string; duration_minutes: number; question_count: number; correct_count: number; notes: string | null; deleted_at: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; block_id?: string | null; topic_id: string; operation_key: string; studied_on: string; duration_minutes: number; question_count?: number; correct_count?: number; notes?: string | null; deleted_at?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; block_id?: string | null; topic_id?: string; operation_key?: string; studied_on?: string; duration_minutes?: number; question_count?: number; correct_count?: number; notes?: string | null; deleted_at?: string | null; created_at?: string; updated_at?: string }
+        Relationships: [
+          { foreignKeyName: "study_sessions_block_id_user_id_fkey"; columns: ["block_id", "user_id"]; isOneToOne: false; referencedRelation: "study_blocks"; referencedColumns: ["id", "user_id"] },
+          { foreignKeyName: "study_sessions_topic_id_user_id_fkey"; columns: ["topic_id", "user_id"]; isOneToOne: false; referencedRelation: "topics"; referencedColumns: ["id", "user_id"] },
+        ]
+      }
+      review_tasks: {
+        Row: { id: string; user_id: string; study_session_id: string; topic_id: string; review_kind: string; interval_days: number; due_on: string; initial_due_on: string; status: string; completed_at: string | null; difficulty: number | null; notes: string | null; parent_review_id: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; study_session_id: string; topic_id: string; review_kind?: string; interval_days: number; due_on: string; initial_due_on: string; status?: string; completed_at?: string | null; difficulty?: number | null; notes?: string | null; parent_review_id?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; study_session_id?: string; topic_id?: string; review_kind?: string; interval_days?: number; due_on?: string; initial_due_on?: string; status?: string; completed_at?: string | null; difficulty?: number | null; notes?: string | null; parent_review_id?: string | null; created_at?: string; updated_at?: string }
+        Relationships: [
+          { foreignKeyName: "review_tasks_study_session_id_user_id_fkey"; columns: ["study_session_id", "user_id"]; isOneToOne: false; referencedRelation: "study_sessions"; referencedColumns: ["id", "user_id"] },
+          { foreignKeyName: "review_tasks_topic_id_user_id_fkey"; columns: ["topic_id", "user_id"]; isOneToOne: false; referencedRelation: "topics"; referencedColumns: ["id", "user_id"] },
+          { foreignKeyName: "review_tasks_parent_review_id_user_id_fkey"; columns: ["parent_review_id", "user_id"]; isOneToOne: false; referencedRelation: "review_tasks"; referencedColumns: ["id", "user_id"] },
+        ]
+      }
+      review_events: {
+        Row: { id: string; user_id: string; review_task_id: string; action: string; old_due_on: string | null; new_due_on: string | null; notes: string | null; occurred_at: string }
+        Insert: { id?: string; user_id: string; review_task_id: string; action: string; old_due_on?: string | null; new_due_on?: string | null; notes?: string | null; occurred_at?: string }
+        Update: { id?: string; user_id?: string; review_task_id?: string; action?: string; old_due_on?: string | null; new_due_on?: string | null; notes?: string | null; occurred_at?: string }
+        Relationships: [
+          { foreignKeyName: "review_events_review_task_id_user_id_fkey"; columns: ["review_task_id", "user_id"]; isOneToOne: false; referencedRelation: "review_tasks"; referencedColumns: ["id", "user_id"] },
+        ]
+      }
       study_blocks: {
         Row: {
           created_at: string
@@ -192,6 +219,11 @@ export type Database = {
         Args: { p_expected_open_blocks: number; p_topic_id: string }
         Returns: string
       }
+      save_study_session: {
+        Args: { p_session_id: string | null; p_operation_key: string | null; p_block_id: string | null; p_topic_id: string; p_studied_on: string; p_duration_minutes: number; p_question_count: number; p_correct_count: number; p_notes: string | null }
+        Returns: Json
+      }
+      delete_study_session: { Args: { p_session_id: string }; Returns: string }
       archive_subject: {
         Args: { p_expected_future_blocks: number; p_subject_id: string }
         Returns: string

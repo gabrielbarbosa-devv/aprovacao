@@ -1,12 +1,13 @@
 import { BookOpen, Clock3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatDuration } from "@/features/today/domain/format-duration";
 import type { TodayStudyBlock } from "@/features/today/domain/types";
 import { StartStudyBlockButton } from "@/features/today/components/start-study-block-button";
+import { StudySessionDialog } from "@/features/study-sessions/components/study-session-dialog";
+import type { StudyTopicOption } from "@/features/study-sessions/domain/types";
 
-export function StudyBlockCard({ block }: { block: TodayStudyBlock }) {
+export function StudyBlockCard({ block, topics, today }: { block: TodayStudyBlock; topics: StudyTopicOption[]; today: string }) {
   return (
     <Card className="rounded-xl py-0 shadow-none">
       <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
@@ -25,9 +26,7 @@ export function StudyBlockCard({ block }: { block: TodayStudyBlock }) {
           {block.status === "em_andamento" ? (
             <Badge className="bg-primary/10 text-primary hover:bg-primary/10">Em andamento</Badge>
           ) : <StartStudyBlockButton blockId={block.id} />}
-          <Button type="button" variant="outline" disabled title="O registro de resultado será implementado na etapa 05" className="w-full sm:w-auto">
-            Registrar resultado · Etapa 05
-          </Button>
+          <StudySessionDialog topics={topics} today={today} selectedBlock={{ id: block.id, topicId: block.topicId, subject: block.subject, topic: block.topic, durationMinutes: block.durationMinutes }} />
         </div>
       </CardContent>
     </Card>

@@ -11,16 +11,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { updateStudyBlockAction } from "@/features/planning/actions";
+import { StudySessionDialog } from "@/features/study-sessions/components/study-session-dialog";
 import { formatStudyDate } from "@/lib/date/study-day";
 import type { PlanningBlock, PlanningTopicOption } from "@/features/planning/domain/types";
 
-export function PlanningBlockSheet({ block, topics, onClose }: { block: PlanningBlock | null; topics: PlanningTopicOption[]; onClose: () => void }) {
+export function PlanningBlockSheet({ block, topics, today, onClose }: { block: PlanningBlock | null; topics: PlanningTopicOption[]; today: string; onClose: () => void }) {
   const [editing, setEditing] = useState(false);
   const [confirmSkip, setConfirmSkip] = useState(false);
+  const [sessionOpen, setSessionOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
   const activeBlock = block;
   if (!activeBlock) return null;
+  const sessionTopics = topics.some((topic) => topic.id === activeBlock.topicId)
+    ? topics
+    : [{ id: activeBlock.topicId, subjectId: "", subject: activeBlock.subject, topic: activeBlock.topic }];
 
   function update(selected: PlanningBlock, status: PlanningBlock["status"] = selected.status, formData?: FormData) {
     const payload = {
@@ -63,6 +68,11 @@ export function PlanningBlockSheet({ block, topics, onClose }: { block: Planning
           ) : (
             <div className="space-y-5 px-4 pb-4">
               <div className="flex flex-wrap gap-2"><Badge variant="secondary">{activeBlock.status.replaceAll("_", " ")}</Badge>{activeBlock.pinned ? <Badge variant="outline"><Pin className="size-3" /> Fixo</Badge> : null}</div>
+              {activeBlock.status !== "ignorado" ? <div className="rounded-xl border bg-muted/20 p-3">
+                {activeBlock.studySession ? <p className="mb-3 text-sm text-muted-foreground">Registro salvo: {activeBlock.studySession.durationMinutes} min · {activeBlock.studySession.questionCount} questões. Você pode corrigir os dados.</p> : <p className="mb-3 text-sm text-muted-foreground">Ao concluir o estudo, registre o tempo e o resultado para agendar as revisões.</p>}
+                <Button type="button" variant={activeBlock.studySession ? "outline" : "default"} onClick={() => setSessionOpen(true)}>{activeBlock.studySession ? "Editar registro" : "Registrar resultado"}</Button>
+                <StudySessionDialog trigger={false} open={sessionOpen} onOpenChange={setSessionOpen} topics={sessionTopics} today={today} selectedBlock={{ id: activeBlock.id, topicId: activeBlock.topicId, subject: activeBlock.subject, topic: activeBlock.topic, durationMinutes: activeBlock.plannedMinutes }} session={activeBlock.studySession} />
+              </div> : null}
               <dl className="space-y-3 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground"><CalendarDays className="size-4" /><dt className="sr-only">Data</dt><dd>{formatStudyDate(activeBlock.plannedDate, "long")}</dd></div>
                 <div className="flex items-center gap-2 text-muted-foreground"><Clock3 className="size-4" /><dt className="sr-only">Duração</dt><dd>{activeBlock.plannedStartTime ? `${activeBlock.plannedStartTime.slice(0, 5)} · ` : ""}{activeBlock.plannedMinutes} minutos</dd></div>

@@ -1,5 +1,8 @@
+import type { StudyTopicOption, StudySessionRecord } from "@/features/study-sessions/domain/types";
+
 export type TodayStudyBlock = {
   id: string;
+  topicId: string;
   subject: string;
   topic: string;
   durationMinutes: number;
@@ -15,4 +18,6 @@ export type TodayDashboard = {
   blocks: TodayStudyBlock[];
   hasPlan: boolean;
   reviewCount: 0;
+  topics: StudyTopicOption[];
+  history: StudySessionRecord[];
 };

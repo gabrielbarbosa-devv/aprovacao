@@ -2,6 +2,7 @@ import "server-only";
 import { getStudyDay } from "@/lib/date/study-day";
 import { requireUser } from "@/lib/auth/require-user";
 import type { TodayDashboard } from "@/features/today/domain/types";
+import { getStudySessionHistory } from "@/features/study-sessions/data/get-study-session-history";
 
 const DEFAULT_TIME_ZONE = "America/Sao_Paulo";
 const DEFAULT_DAILY_GOAL_MINUTES = 240;
@@ -58,6 +59,17 @@ export async function getTodayDashboard(): Promise<TodayDashboard> {
 
   if (topicSubjectsError) throw new Error("Não foi possível carregar as matérias dos blocos.");
 
+  const [{ data: activeTopics, error: activeTopicsError }, history] = await Promise.all([
+    supabase.from("topics").select("id, subject_id, title").eq("user_id", user.id).is("archived_at", null).order("sort_order", { ascending: true }),
+    getStudySessionHistory(10),
+  ]);
+  if (activeTopicsError) throw new Error("Não foi possível carregar seus tópicos.");
+  const activeSubjectIds = [...new Set((activeTopics ?? []).map((topic) => topic.subject_id))];
+  const { data: activeSubjects, error: activeSubjectsError } = activeSubjectIds.length
+    ? await supabase.from("subjects").select("id, name").eq("user_id", user.id).is("archived_at", null).in("id", activeSubjectIds)
+    : { data: [], error: null };
+  if (activeSubjectsError) throw new Error("Não foi possível carregar suas matérias.");
+
   const topicById = new Map((topics ?? []).map((topic) => [topic.id, topic]));
   const subjectById = new Map((topicSubjects ?? []).map((subject) => [subject.id, subject.name]));
 
@@ -74,6 +86,7 @@ export async function getTodayDashboard(): Promise<TodayDashboard> {
 
       return [{
         id: block.id,
+        topicId: block.topic_id,
         subject,
         topic: topic.title,
         durationMinutes: block.planned_minutes,
@@ -83,5 +96,10 @@ export async function getTodayDashboard(): Promise<TodayDashboard> {
     }),
     hasPlan: Boolean(subjects?.length || allBlocks?.length),
     reviewCount: 0,
+    topics: (activeTopics ?? []).flatMap((topic) => {
+      const subject = (activeSubjects ?? []).find((entry) => entry.id === topic.subject_id)?.name;
+      return subject ? [{ id: topic.id, subject, topic: topic.title }] : [];
+    }),
+    history,
   };
 }

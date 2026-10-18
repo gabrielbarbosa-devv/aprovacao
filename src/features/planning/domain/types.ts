@@ -1,3 +1,5 @@
+import type { StudySessionRecord } from "@/features/study-sessions/domain/types";
+
 export type PlanningStatus = "planejado" | "em_andamento" | "concluido" | "ignorado";
 
 export type PlanningBlock = {
@@ -11,6 +13,7 @@ export type PlanningBlock = {
   status: PlanningStatus;
   pinned: boolean;
   sortOrder: number;
+  studySession: StudySessionRecord | null;
 };
 
 export type PlanningTopicOption = { id: string; subjectId: string; subject: string; topic: string };

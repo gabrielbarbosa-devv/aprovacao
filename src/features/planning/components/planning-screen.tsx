@@ -148,7 +148,7 @@ export function PlanningScreen({ data }: { data: PlanningData }) {
 
         <div className="mt-5 flex items-start gap-2 rounded-xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm text-muted-foreground"><Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" /><p>Se a rotina mudar, reorganize blocos pendentes sem alterar estudos concluídos nem blocos fixados.</p></div>
       </main>
-      <PlanningBlockSheet key={selectedBlock?.id ?? "no-selection"} block={selectedBlock} topics={data.topics} onClose={() => setSelectedBlock(null)} />
+      <PlanningBlockSheet key={selectedBlock?.id ?? "no-selection"} block={selectedBlock} topics={data.topics} today={data.today} onClose={() => setSelectedBlock(null)} />
     </AppShell>
   );
 }

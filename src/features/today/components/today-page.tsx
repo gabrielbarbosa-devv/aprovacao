@@ -9,6 +9,8 @@ import { ReviewsEmptyState } from "@/features/today/components/reviews-empty-sta
 import { StudyBlockCard } from "@/features/today/components/study-block-card";
 import { getTodayDashboard } from "@/features/today/data/get-today-dashboard";
 import { formatDuration } from "@/features/today/domain/format-duration";
+import { StudySessionDialog } from "@/features/study-sessions/components/study-session-dialog";
+import { StudySessionHistory } from "@/features/study-sessions/components/study-session-history";
 import { addStudyDays, formatStudyDate } from "@/lib/date/study-day";
 
 function formatDailyGoal(minutes: number): string {
@@ -59,7 +61,7 @@ export async function TodayPage() {
               </CardAction>
             </CardHeader>
             <CardContent className="space-y-3 px-5 pb-5 pt-5 sm:px-6 sm:pb-6">
-              {dashboard.blocks.map((block) => <StudyBlockCard key={block.id} block={block} />)}
+              {dashboard.blocks.map((block) => <StudyBlockCard key={block.id} block={block} topics={dashboard.topics} today={dashboard.studyDay} />)}
               {dashboard.blocks.length === 0 ? (
                 <div className="rounded-xl border border-dashed p-6 text-center">
                   <p className="text-sm font-medium">{dashboard.hasPlan ? "Nenhum bloco planejado para hoje." : "Seu planejamento ainda não começou."}</p>
@@ -73,7 +75,7 @@ export async function TodayPage() {
               ) : null}
               <div className="flex items-start gap-3 rounded-xl border bg-muted/30 px-4 py-4 text-sm leading-5 text-muted-foreground">
                 <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-                <span>Estude onde preferir. Ao terminar, registre seu resultado nesta plataforma quando essa etapa estiver disponível.</span>
+                <span>Estude onde preferir. Ao terminar, registre seu tempo e seus acertos aqui.</span>
               </div>
             </CardContent>
           </Card>
@@ -88,6 +90,12 @@ export async function TodayPage() {
             </CardContent>
           </Card>
         </div>
+
+        <section className="mt-6 flex flex-col gap-3 rounded-xl border bg-background p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div><h2 className="text-sm font-semibold">Estudou fora de um bloco?</h2><p className="mt-1 text-sm text-muted-foreground">Registre uma sessão avulsa vinculada a um tópico seu.</p></div>
+          <StudySessionDialog topics={dashboard.topics} today={dashboard.studyDay} />
+        </section>
+        <StudySessionHistory sessions={dashboard.history} topics={dashboard.topics} today={dashboard.studyDay} />
 
         <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
           <Check aria-hidden="true" className="size-4 shrink-0" />

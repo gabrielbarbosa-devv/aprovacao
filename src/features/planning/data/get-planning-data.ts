@@ -25,8 +25,38 @@ export async function getPlanningData(requestedWeek?: string): Promise<PlanningD
   ]);
   if (blocksError || topicsError || subjectsError) throw new Error("Não foi possível carregar seu planejamento.");
 
+  const blockIds = (rawBlocks ?? []).map((block) => block.id);
+  const { data: sessions, error: sessionsError } = blockIds.length
+    ? await supabase.from("study_sessions").select("id, block_id, topic_id, studied_on, duration_minutes, question_count, correct_count, notes")
+      .eq("user_id", user.id).is("deleted_at", null).in("block_id", blockIds)
+    : { data: [], error: null };
+  if (sessionsError) throw new Error("Não foi possível carregar os registros dos blocos.");
+  const sessionIds = (sessions ?? []).map((session) => session.id);
+  const { data: reviews, error: reviewsError } = sessionIds.length
+    ? await supabase.from("review_tasks").select("study_session_id, due_on, interval_days").eq("user_id", user.id)
+      .eq("review_kind", "standard").in("study_session_id", sessionIds).order("interval_days", { ascending: true })
+    : { data: [], error: null };
+  if (reviewsError) throw new Error("Não foi possível carregar as revisões dos registros.");
+
   const subjectById = new Map((rawSubjects ?? []).map((subject) => [subject.id, subject.name]));
   const topicById = new Map((rawTopics ?? []).filter((topic) => subjectById.has(topic.subject_id)).map((topic) => [topic.id, topic]));
+  const reviewsBySession = new Map<string, string[]>();
+  for (const review of reviews ?? []) {
+    const dates = reviewsBySession.get(review.study_session_id) ?? [];
+    dates.push(review.due_on);
+    reviewsBySession.set(review.study_session_id, dates);
+  }
+  const sessionByBlock = new Map((sessions ?? []).flatMap((session) => {
+    if (!session.block_id) return [];
+    const topic = topicById.get(session.topic_id);
+    const subject = topic ? subjectById.get(topic.subject_id) : undefined;
+    if (!topic || !subject) return [];
+    return [[session.block_id, {
+      id: session.id, blockId: session.block_id, topicId: session.topic_id, subject, topic: topic.title,
+      studiedOn: session.studied_on, durationMinutes: session.duration_minutes, questionCount: session.question_count,
+      correctCount: session.correct_count, notes: session.notes, reviewDates: reviewsBySession.get(session.id) ?? [],
+    }] as const];
+  }));
   const blocks: PlanningBlock[] = (rawBlocks ?? []).flatMap((block) => {
     const topic = topicById.get(block.topic_id);
     const subject = topic ? subjectById.get(topic.subject_id) : undefined;
@@ -42,6 +72,7 @@ export async function getPlanningData(requestedWeek?: string): Promise<PlanningD
       status: block.status as PlanningBlock["status"],
       pinned: block.pinned,
       sortOrder: block.sort_order,
+      studySession: sessionByBlock.get(block.id) ?? null,
     }];
   });
   const activeSubjectIds = new Set((rawSubjects ?? []).filter((subject) => subject.archived_at === null).map((subject) => subject.id));
