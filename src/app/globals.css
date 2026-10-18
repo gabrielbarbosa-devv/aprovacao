@@ -51,6 +51,22 @@ html {
   scroll-behavior: smooth;
 }
 
+@utility app-page {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 90rem;
+  flex: 1 1 auto;
+  padding: 1.25rem 1rem 1.5rem;
+
+  @media (min-width: 640px) {
+    padding: 1.5rem 1.5rem 2rem;
+  }
+
+  @media (min-width: 1280px) {
+    padding-inline: 2rem;
+  }
+}
+
 body {
   margin: 0;
 }

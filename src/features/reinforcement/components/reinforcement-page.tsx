@@ -69,8 +69,8 @@ export function ReinforcementPage({ data }: { data: ReinforcementPageData }) {
 
   return (
     <AppShell email={data.email} activeItem="planejamento">
-      <main className="mx-auto w-full max-w-[1240px] flex-1 px-5 pb-8 pt-8 sm:px-8 sm:pt-10 lg:px-10">
-        <header className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+      <main className="app-page">
+        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <Link href="/planejamento" className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft aria-hidden="true" className="size-4" />Voltar ao calendário</Link>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Evolução baseada em registros</p>
@@ -87,14 +87,14 @@ export function ReinforcementPage({ data }: { data: ReinforcementPageData }) {
           </CardHeader>
           <CardContent>
             {!data.hasQuestionHistory && data.recommendations.length === 0 ? (
-              <div className="rounded-xl border border-dashed px-5 py-12 text-center">
+              <div className="rounded-xl border border-dashed px-5 py-8 text-center">
                 <CircleAlert aria-hidden="true" className="mx-auto size-8 text-muted-foreground" />
                 <h2 className="mt-4 font-semibold">Registre questões para descobrir quais tópicos reforçar</h2>
                 <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">Não há registros de questões neste período. O plano não cria resultados ou dificuldades por conta própria.</p>
                 <Button render={<Link href="/registros" />} variant="outline" className="mt-4">Ir para Registros</Button>
               </div>
             ) : data.recommendations.length === 0 ? (
-              <div className="rounded-xl border border-dashed px-5 py-12 text-center">
+              <div className="rounded-xl border border-dashed px-5 py-8 text-center">
                 <Sparkles aria-hidden="true" className="mx-auto size-8 text-muted-foreground" />
                 <h2 className="mt-4 font-semibold">Sem sinais suficientes de dificuldade no período</h2>
                 <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">Não foram encontrados tópicos com pelo menos 10 questões e aproveitamento abaixo de 70%.</p>

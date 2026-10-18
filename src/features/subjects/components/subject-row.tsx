@@ -39,10 +39,10 @@ export function SubjectRow({ subject, activeSubjectIds, activeIndex }: { subject
     <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
   </>;
 
-  return <div className="flex items-center gap-2 rounded-xl border bg-background p-2 transition-colors hover:bg-muted/20 sm:p-3">
+  return <div className="flex items-center gap-2 rounded-xl border bg-background p-1.5 transition-colors hover:bg-muted/20 sm:p-2">
     {archived
       ? <Button type="button" variant="ghost" disabled className="h-auto min-w-0 flex-1 justify-start gap-3 rounded-lg px-2 py-2 text-left sm:gap-4 sm:px-2.5" aria-label={`Matéria arquivada: ${subject.name}`}>{content}</Button>
-      : <Link href={`/materias/${subject.id}`} className="flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left outline-none hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring sm:gap-4 sm:px-2.5" aria-label={`Abrir tópicos de ${subject.name}`}>{content}</Link>}
+      : <Link href={`/materias/${subject.id}`} className="flex min-h-12 min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-left outline-none hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring sm:gap-3 sm:px-2.5" aria-label={`Abrir tópicos de ${subject.name}`}>{content}</Link>}
     <SubjectActionsMenu subject={subject} activeSubjectIds={activeSubjectIds} activeIndex={activeIndex} />
   </div>;
 }

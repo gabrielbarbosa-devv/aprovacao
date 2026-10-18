@@ -29,8 +29,8 @@ export async function TodayPage() {
 
   return (
     <AppShell email={dashboard.email}>
-      <main className="mx-auto w-full max-w-[1180px] flex-1 px-5 pb-8 pt-8 sm:px-8 sm:pt-10 lg:px-10">
-        <section aria-labelledby="today-heading" className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+      <main className="app-page">
+        <section aria-labelledby="today-heading" className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Hoje</p>
             <h1 id="today-heading" className="mt-3 text-3xl font-bold leading-tight tracking-tight sm:text-[34px]">

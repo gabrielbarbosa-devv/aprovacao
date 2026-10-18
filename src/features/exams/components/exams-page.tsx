@@ -32,8 +32,8 @@ export function ExamsPage({ data }: { data: ExamPageData }) {
     document.getElementById(`exam-tab-${next}`)?.focus();
   }
 
-  return <main className="mx-auto w-full max-w-[1240px] flex-1 px-5 pb-10 pt-8 sm:px-8 sm:pt-10 lg:px-10">
-    <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
+  return <main className="app-page">
+    <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
       <div><p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary">Meus objetivos</p><h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-[34px]">Concursos</h1><p className="mt-2 text-sm text-muted-foreground">Acompanhe seus objetivos em um único lugar.</p></div>
       <Button onClick={() => setAddOpen(true)} className="gap-2 self-start"><Plus aria-hidden="true" className="size-4" />Adicionar concurso</Button>
     </div>
@@ -49,7 +49,7 @@ export function ExamsPage({ data }: { data: ExamPageData }) {
           <Tab id="arquivados" label="Arquivados" count={archivedTargets.length} selected={tab === "arquivados"} onSelect={setTab} />
         </div>
         <div id="exam-panel" role="tabpanel" aria-labelledby={`exam-tab-${tab}`} tabIndex={0} className="outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-          {visibleTargets.length ? <ul className="grid gap-2.5 md:grid-cols-2">{visibleTargets.map((target) => <li key={target.id}><ExamTargetRow target={target} onOpen={() => setSelectedTarget(target)} archived={tab === "arquivados"} /></li>)}</ul> : <div className="rounded-xl border border-dashed bg-muted/10 px-5 py-12 text-center">
+          {visibleTargets.length ? <ul className="grid gap-2.5 md:grid-cols-2">{visibleTargets.map((target) => <li key={target.id}><ExamTargetRow target={target} onOpen={() => setSelectedTarget(target)} archived={tab === "arquivados"} /></li>)}</ul> : <div className="rounded-xl border border-dashed bg-muted/10 px-5 py-8 text-center">
             <span className="mx-auto grid size-11 place-items-center rounded-xl bg-secondary text-muted-foreground">{tab === "ativos" ? <Trophy aria-hidden="true" className="size-5" /> : <Archive aria-hidden="true" className="size-5" />}</span>
             <h2 className="mt-3 text-sm font-semibold">{tab === "ativos" ? "Nenhum concurso cadastrado" : "Nenhum concurso arquivado"}</h2>
             <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">{tab === "ativos" ? "Adicione um objetivo para organizar suas matérias e acompanhar sua preparação." : "Concursos arquivados por você aparecerão aqui e poderão ser restaurados."}</p>

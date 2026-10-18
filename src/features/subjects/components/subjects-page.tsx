@@ -28,8 +28,8 @@ export function SubjectsPage({ subjects }: { subjects: Subject[] }) {
     document.getElementById(`subjects-tab-${nextTab}`)?.focus();
   }
 
-  return <main className="mx-auto w-full max-w-[1240px] flex-1 px-5 pb-10 pt-8 sm:px-8 sm:pt-10 lg:px-10">
-    <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
+  return <main className="app-page">
+    <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
       <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary">Conteúdos</p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-[34px]">Matérias</h1>
@@ -49,8 +49,8 @@ export function SubjectsPage({ subjects }: { subjects: Subject[] }) {
           <button id="subjects-tab-arquivadas" type="button" role="tab" tabIndex={tab === "arquivadas" ? 0 : -1} aria-selected={tab === "arquivadas"} aria-controls="subjects-panel" onClick={() => setTab("arquivadas")} className={`min-h-9 rounded-lg px-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${tab === "arquivadas" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Arquivadas <span className="ml-1 tabular-nums text-xs text-muted-foreground">{archivedSubjects.length}</span></button>
         </div>
 
-        <div id="subjects-panel" role="tabpanel" aria-labelledby={`subjects-tab-${tab}`} tabIndex={0} className="space-y-2 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-          {visibleSubjects.length > 0 ? visibleSubjects.map((subject, index) => <SubjectRow key={subject.id} subject={subject} activeSubjectIds={tab === "ativas" ? activeSubjects.map((activeSubject) => activeSubject.id) : undefined} activeIndex={index} />) : <div className="rounded-xl border border-dashed bg-muted/10 px-5 py-10 text-center">
+        <div id="subjects-panel" role="tabpanel" aria-labelledby={`subjects-tab-${tab}`} tabIndex={0} className="grid gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 xl:grid-cols-2">
+          {visibleSubjects.length > 0 ? visibleSubjects.map((subject, index) => <SubjectRow key={subject.id} subject={subject} activeSubjectIds={tab === "ativas" ? activeSubjects.map((activeSubject) => activeSubject.id) : undefined} activeIndex={index} />) : <div className="rounded-xl border border-dashed bg-muted/10 px-5 py-8 text-center xl:col-span-2">
             <span className="mx-auto grid size-11 place-items-center rounded-xl bg-secondary text-muted-foreground">{tab === "ativas" ? <BookOpen aria-hidden="true" className="size-5" /> : <Archive aria-hidden="true" className="size-5" />}</span>
             <h2 className="mt-3 text-sm font-semibold">{tab === "ativas" ? "Nenhuma matéria cadastrada" : "Nenhuma matéria arquivada"}</h2>
             <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">{tab === "ativas" ? "Adicione uma matéria para começar a organizar seus tópicos de estudo." : "Quando você arquivar uma matéria, ela ficará disponível aqui para ser restaurada."}</p>

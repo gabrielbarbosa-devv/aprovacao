@@ -66,8 +66,8 @@ export function PlanningScreen({ data }: { data: PlanningData }) {
 
   return (
     <AppShell email={data.email} activeItem="planejamento">
-      <main className="mx-auto w-full max-w-[1240px] flex-1 px-5 pb-8 pt-8 sm:px-8 sm:pt-10 lg:px-10">
-        <section aria-labelledby="planning-title" className="mb-8 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+      <main className="app-page">
+        <section aria-labelledby="planning-title" className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Planejamento</p>
             <h1 id="planning-title" className="mt-3 text-3xl font-bold leading-tight tracking-tight sm:text-[34px]">Planejamento semanal</h1>

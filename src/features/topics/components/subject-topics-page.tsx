@@ -62,12 +62,12 @@ export function SubjectTopicsPage({ data }: { data: SubjectTopicsPageData }) {
     mutate(() => reorderTopicsAction({ subjectId: data.subject.id, topicIds: reordered.map((item) => item.id) }), "Ordem dos tópicos atualizada.");
   }
 
-  return <main className="mx-auto w-full max-w-[1240px] flex-1 px-5 pb-10 pt-7 sm:px-8 sm:pt-9 lg:px-10">
-    <Link href="/materias" className="mb-5 inline-flex min-h-8 items-center gap-2 rounded-md text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
+  return <main className="app-page">
+    <Link href="/materias" className="mb-4 inline-flex min-h-8 items-center gap-2 rounded-md text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
       <ArrowLeft aria-hidden="true" className="size-4" /><span>Matérias</span><span aria-hidden="true" className="text-border">/</span><span className="max-w-[48vw] truncate text-foreground">{data.subject.name}</span>
     </Link>
 
-    <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
+    <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
       <div className="min-w-0">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary">Detalhe da matéria</p>
         <h1 className="mt-2 break-words text-3xl font-bold tracking-tight sm:text-[34px]">{data.subject.name}</h1>

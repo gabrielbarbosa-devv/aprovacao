@@ -16,8 +16,8 @@ export function AnalyticsPage({ data }: { data: AnalyticsPageData }) {
   const studyTime = summary.studyMinutes === null ? "Sem dados" : formatMinutes(summary.studyMinutes);
 
   return (
-    <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-7 sm:px-6 lg:px-10 lg:py-9">
-      <header className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <main className="app-page">
+      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary">Seu histórico</p>
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Meu progresso</h1>

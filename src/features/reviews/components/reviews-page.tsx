@@ -23,8 +23,8 @@ export function ReviewsPage({ email, today, due, upcoming, completed }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("due");
   const items = activeTab === "due" ? due : activeTab === "upcoming" ? upcoming : completed;
   return <AppShell email={email} activeItem="revisoes">
-    <main className="mx-auto w-full max-w-[1180px] flex-1 px-5 pb-10 pt-8 sm:px-8 sm:pt-10 lg:px-10">
-      <section aria-labelledby="reviews-heading" className="mb-8">
+    <main className="app-page">
+      <section aria-labelledby="reviews-heading" className="mb-6">
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Repetição espaçada</p>
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div><h1 id="reviews-heading" className="text-3xl font-bold leading-tight tracking-tight sm:text-[34px]">Revisões</h1><p className="mt-2 text-sm text-muted-foreground">Reforce cada assunto no momento certo e acompanhe o que já revisou.</p></div>
@@ -90,7 +90,7 @@ function EmptyState({ tab }: { tab: Tab }) {
       ? { icon: CalendarClock, title: "Nenhuma revisão futura", description: "As próximas etapas aparecem aqui quando seus estudos registrados tiverem novas datas agendadas." }
       : { icon: Check, title: "Nenhuma revisão concluída", description: "Depois que você registrar uma revisão, o resultado ficará disponível neste histórico." };
   const Icon = content.icon;
-  return <div className="grid min-h-64 place-items-center rounded-xl border border-dashed px-6 py-10 text-center"><div className="max-w-sm"><span className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-muted text-muted-foreground"><Icon aria-hidden="true" className="size-6" /></span><h3 className="text-sm font-semibold">{content.title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{content.description}</p></div></div>;
+  return <div className="grid min-h-48 place-items-center rounded-xl border border-dashed px-6 py-7 text-center"><div className="max-w-sm"><span className="mx-auto mb-3 grid size-12 place-items-center rounded-xl bg-muted text-muted-foreground"><Icon aria-hidden="true" className="size-5" /></span><h3 className="text-sm font-semibold">{content.title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{content.description}</p></div></div>;
 }
 
 function difficultyText(value: number | null) {

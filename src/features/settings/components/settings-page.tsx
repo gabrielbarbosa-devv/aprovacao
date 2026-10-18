@@ -87,7 +87,7 @@ export function SettingsPage({ data }: { data: SettingsPageData }) {
 
   return (
     <AppShell email={data.email} activeItem="configuracoes">
-      <main className="mx-auto w-full max-w-[1130px] flex-1 px-5 pb-10 pt-7 sm:px-8 sm:pt-9 lg:px-10">
+      <main className="app-page">
         <header className="mb-6">
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Sua conta</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-[34px]">Configurações</h1>
