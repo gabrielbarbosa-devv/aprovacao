@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   BookOpen,
   CalendarDays,
+  ChartNoAxesCombined,
   CircleDot,
   ClipboardList,
   Home,
@@ -15,9 +16,11 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SignOutButton } from "@/components/sign-out-button";
 
+type SidebarItem = "hoje" | "planejamento" | "materias" | "revisoes" | "concursos" | "registros" | "caderno-de-erros" | "meu-progresso";
+
 type SidebarProps = {
   email: string;
-  activeItem?: "hoje" | "planejamento" | "materias" | "revisoes" | "concursos" | "registros" | "caderno-de-erros";
+  activeItem?: SidebarItem;
 };
 
 function getInitials(email: string): string {
@@ -104,6 +107,15 @@ export function Sidebar({ email, activeItem = "hoje" }: SidebarProps) {
           <NotebookPen aria-hidden="true" className="size-4" />
           Caderno de erros
           {activeItem === "caderno-de-erros" ? <span aria-hidden="true" className="ml-auto size-1.5 rounded-full bg-primary" /> : null}
+        </Link>
+        <Link
+          href="/meu-progresso"
+          aria-current={activeItem === "meu-progresso" ? "page" : undefined}
+          className={`flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring ${activeItem === "meu-progresso" ? activeClass : "text-muted-foreground hover:bg-muted"}`}
+        >
+          <ChartNoAxesCombined aria-hidden="true" className="size-4" />
+          Meu progresso
+          {activeItem === "meu-progresso" ? <span aria-hidden="true" className="ml-auto size-1.5 rounded-full bg-primary" /> : null}
         </Link>
       </nav>
 
