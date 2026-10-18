@@ -9,14 +9,16 @@ import { Button } from "@/components/ui/button";
 type StudyBlockActionButtonProps = {
   blockId: string;
   action: "start" | "pause";
+  label?: string;
+  variant?: "default" | "outline";
 };
 
 const initialState: ActionResult = { status: "idle", message: "" };
 
-export function StudyBlockActionButton({ blockId, action }: StudyBlockActionButtonProps) {
+export function StudyBlockActionButton({ blockId, action, label: customLabel, variant = "outline" }: StudyBlockActionButtonProps) {
   const serverAction = action === "pause" ? pauseStudyBlockAction : startStudyBlockAction;
   const [result, formAction, pending] = useActionState<ActionResult, FormData>(serverAction, initialState);
-  const label = action === "pause" ? "Pausar estudo" : "Iniciar ou retomar";
+  const label = customLabel ?? (action === "pause" ? "Pausar estudo" : "Iniciar ou retomar");
 
   useEffect(() => {
     if (!result.message) return;
@@ -27,7 +29,7 @@ export function StudyBlockActionButton({ blockId, action }: StudyBlockActionButt
   return (
     <form action={formAction}>
       <input type="hidden" name="blockId" value={blockId} />
-      <Button type="submit" variant="outline" disabled={pending} className="h-9 w-full gap-2 sm:w-auto">
+      <Button type="submit" variant={variant} disabled={pending} className="h-9 w-full gap-2 sm:w-auto">
         {pending ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin" /> : action === "pause" ? <Pause aria-hidden="true" className="size-3.5" /> : <Play aria-hidden="true" className="size-3.5" />}
         {label}
       </Button>

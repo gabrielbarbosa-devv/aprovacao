@@ -1,43 +1,75 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { sortSubjectPerformance } from "@/features/analytics/domain/calculate-aggregates";
 import type { AnalyticsFilters, SubjectPerformance } from "@/features/analytics/domain/types";
+
+const chartConfig = {
+  accuracy: { label: "Aproveitamento", color: "var(--primary)" },
+} satisfies ChartConfig;
 
 type SubjectBreakdownProps = { data: SubjectPerformance[]; filters: AnalyticsFilters; hasQuestionHistory: boolean };
 
 export function SubjectBreakdown({ data, filters, hasQuestionHistory }: SubjectBreakdownProps) {
+  const router = useRouter();
   const ordered = sortSubjectPerformance(data, filters.sortBy);
+  const chartHeight = Math.max(176, Math.min(420, ordered.length * 36 + 32));
+
   return (
     <Card className="min-w-0">
       <CardHeader>
         <CardTitle>Por matéria</CardTitle>
-        <CardDescription>Acertos e aproveitamento sobre as questões registradas.</CardDescription>
+        <CardDescription>Aproveitamento calculado sobre questões registradas; clique em uma barra para filtrar.</CardDescription>
       </CardHeader>
       <CardContent>
         {ordered.length > 0 ? (
-          <div className="grid gap-5">
-            {ordered.map((subject) => {
-              const isSelected = filters.subjectId === subject.id;
-              const href = getSubjectHref(filters, isSelected ? null : subject.id);
-              return (
-                <div key={subject.id} className="grid gap-2">
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                    <Link href={href} aria-current={isSelected ? "page" : undefined} className="text-sm font-medium underline-offset-4 hover:text-primary hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                      {subject.name}{isSelected ? " · filtrada" : ""}
-                    </Link>
-                    <span className="text-sm font-semibold tabular-nums text-muted-foreground">{formatPercent(subject.accuracy)}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div role="progressbar" aria-label={`Aproveitamento em ${subject.name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={subject.accuracy ?? 0} className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
-                      <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${subject.accuracy ?? 0}%` }} />
-                    </div>
-                    <span className="min-w-28 text-right text-xs text-muted-foreground tabular-nums">{subject.correctCount}/{subject.questionCount} acertos</span>
-                  </div>
-                  {subject.questionCount < 10 ? <p className="text-xs text-muted-foreground">Amostra limitada: menos de 10 questões.</p> : null}
-                </div>
-              );
-            })}
-          </div>
+          <>
+            <ChartContainer config={chartConfig} className="w-full" style={{ height: chartHeight, aspectRatio: "auto" }} role="group" aria-label="Gráfico de aproveitamento por matéria">
+              <BarChart
+                accessibilityLayer
+                data={ordered}
+                layout="vertical"
+                margin={{ top: 4, right: 12, left: 4, bottom: 0 }}
+                barCategoryGap="28%"
+              >
+                <CartesianGrid horizontal={false} strokeDasharray="3 3" />
+                <XAxis type="number" domain={[0, 100]} tickFormatter={(value: number) => `${value}%`} tickLine={false} axisLine={false} />
+                <YAxis type="category" dataKey="name" width={120} tickLine={false} axisLine={false} />
+                <ChartTooltip
+                  cursor={{ fill: "var(--muted)", opacity: 0.45 }}
+                  content={<ChartTooltipContent
+                    labelFormatter={(label) => String(label)}
+                    formatter={(value, name, item) => {
+                      if (name !== "accuracy" || typeof value !== "number") return null;
+                      const subject = item.payload as SubjectPerformance;
+                      return <div className="grid gap-1">
+                        <span className="font-semibold text-foreground">{formatPercent(subject.accuracy)}</span>
+                        <span className="text-muted-foreground">{subject.correctCount} acertos de {subject.questionCount} questões</span>
+                      </div>;
+                    }}
+                  />}
+                />
+                <Bar
+                  dataKey="accuracy"
+                  fill="var(--color-accuracy)"
+                  radius={4}
+                  maxBarSize={18}
+                  cursor="pointer"
+                  onClick={(_bar, index) => {
+                    const subject = ordered[index];
+                    if (subject) router.push(getSubjectHref(filters, filters.subjectId === subject.id ? null : subject.id));
+                  }}
+                />
+              </BarChart>
+            </ChartContainer>
+            <ul className="sr-only" aria-label="Desempenho registrado por matéria">
+              {ordered.map((subject) => <li key={subject.id}>{`${subject.name}: ${formatPercent(subject.accuracy)}, ${subject.correctCount} acertos de ${subject.questionCount} questões.`}</li>)}
+            </ul>
+            <p className="mt-2 text-xs text-muted-foreground">A amostra de cada matéria aparece ao passar ou focar uma barra. Use também o filtro de matéria acima.</p>
+          </>
         ) : (
           <div className="grid min-h-36 place-items-center rounded-lg border border-dashed px-5 py-5 text-center">
             <div className="grid max-w-sm gap-2">

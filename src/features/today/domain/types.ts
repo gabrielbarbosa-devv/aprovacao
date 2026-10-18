@@ -1,5 +1,6 @@
 import type { StudyTopicOption, StudySessionRecord } from "@/features/study-sessions/domain/types";
 import type { ReviewTask } from "@/features/reviews/domain/types";
+import type { StudyGuide } from "@/features/topics/domain/types";
 
 export type TodayStudyBlock = {
   id: string;
@@ -9,6 +10,8 @@ export type TodayStudyBlock = {
   durationMinutes: number;
   sequence: number;
   status: "planejado" | "em_andamento";
+  sourceUrl: string | null;
+  studyGuide: StudyGuide | null;
 };
 
 export type TodayDashboard = {

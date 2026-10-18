@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import type { TodayDashboard } from "@/features/today/domain/types";
 import { getStudySessionHistory } from "@/features/study-sessions/data/get-study-session-history";
 import { getDueReviewSummary } from "@/features/reviews/data/reviews-repository";
+import { parseStudyGuide } from "@/features/topics/domain/study-guide";
 
 const DEFAULT_TIME_ZONE = "America/Sao_Paulo";
 const DEFAULT_DAILY_GOAL_MINUTES = 240;
@@ -43,12 +44,21 @@ export async function getTodayDashboard(): Promise<TodayDashboard> {
   const { data: topics, error: topicsError } = topicIds.length
     ? await supabase
         .from("topics")
-        .select("id, title, subject_id")
+        .select("id, title, subject_id, source_url")
         .eq("user_id", user.id)
         .in("id", topicIds)
     : { data: [], error: null };
 
   if (topicsError) throw new Error("Não foi possível carregar as matérias dos blocos.");
+
+  const { data: guides, error: guidesError } = topicIds.length
+    ? await supabase.from("topic_study_guides")
+        .select("topic_id, content, source_evidence, legacy_notes")
+        .eq("user_id", user.id)
+        .in("topic_id", topicIds)
+    : { data: [], error: null };
+
+  if (guidesError) throw new Error("Não foi possível carregar os guias de estudo.");
 
   const subjectIds = [...new Set((topics ?? []).map((topic) => topic.subject_id))];
   const { data: topicSubjects, error: topicSubjectsError } = subjectIds.length
@@ -74,6 +84,10 @@ export async function getTodayDashboard(): Promise<TodayDashboard> {
 
   const topicById = new Map((topics ?? []).map((topic) => [topic.id, topic]));
   const subjectById = new Map((topicSubjects ?? []).map((subject) => [subject.id, subject.name]));
+  const guideByTopicId = new Map((guides ?? []).map((guide) => [
+    guide.topic_id,
+    parseStudyGuide(guide.content, guide.source_evidence, guide.legacy_notes),
+  ]));
 
   return {
     studyDay,
@@ -94,6 +108,8 @@ export async function getTodayDashboard(): Promise<TodayDashboard> {
         durationMinutes: block.planned_minutes,
         sequence: index + 1,
         status: block.status as "planejado" | "em_andamento",
+        sourceUrl: topic.source_url,
+        studyGuide: guideByTopicId.get(topic.id) ?? null,
       }];
     }),
     hasPlan: Boolean(subjects?.length || allBlocks?.length),
