@@ -26,6 +26,10 @@ export async function getTodayDashboard(): Promise<TodayDashboard> {
 
   const timeZone = settings?.timezone ?? DEFAULT_TIME_ZONE;
   const studyDay = getStudyDay(timeZone);
+  const { count: reviewCount, error: reviewsError } = await supabase.from("review_tasks")
+    .select("id", { count: "exact", head: true }).eq("user_id", user.id)
+    .eq("due_on", studyDay).eq("status", "pending");
+  if (reviewsError) throw new Error("Não foi possível carregar as revisões de hoje.");
   const { data: blocks, error: blocksError } = await supabase
     .from("study_blocks")
     .select("id, topic_id, planned_minutes, sort_order, status")
@@ -95,7 +99,7 @@ export async function getTodayDashboard(): Promise<TodayDashboard> {
       }];
     }),
     hasPlan: Boolean(subjects?.length || allBlocks?.length),
-    reviewCount: 0,
+    reviewCount: reviewCount ?? 0,
     topics: (activeTopics ?? []).flatMap((topic) => {
       const subject = (activeSubjects ?? []).find((entry) => entry.id === topic.subject_id)?.name;
       return subject ? [{ id: topic.id, subject, topic: topic.title }] : [];

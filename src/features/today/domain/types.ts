@@ -17,7 +17,7 @@ export type TodayDashboard = {
   email: string;
   blocks: TodayStudyBlock[];
   hasPlan: boolean;
-  reviewCount: 0;
+  reviewCount: number;
   topics: StudyTopicOption[];
   history: StudySessionRecord[];
 };
