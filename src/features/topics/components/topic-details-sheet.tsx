@@ -20,7 +20,7 @@ export function TopicDetailsSheet({ topic, open, onOpenChange, onEdit }: {
 }) {
   if (!topic) return null;
   return <Sheet open={open} onOpenChange={onOpenChange}>
-    <SheetContent side="right" className="w-[min(100vw,42rem)] overflow-y-auto sm:max-w-[42rem]">
+    <SheetContent side="right" className="w-[min(100vw,42rem)] !max-w-[42rem] overflow-y-auto">
       <SheetHeader className="border-b px-5 py-6 sm:px-6">
         <div className="pr-8">
           {topic.moduleTitle ? <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><BookOpen aria-hidden="true" className="size-3.5" />{topic.moduleTitle}</p> : null}
