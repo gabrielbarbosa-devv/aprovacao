@@ -31,7 +31,7 @@ export function SubjectModuleList({ modules, topics, nextTopicId, actions }: {
       const percentage = moduleTopics.length > 0 ? Math.round((completed / moduleTopics.length) * 100) : 0;
       return <AccordionItem key={module.id} value={module.id} className="mb-3 overflow-hidden rounded-xl border bg-card last:border-b">
         <AccordionHeader>
-          <AccordionTrigger className="min-h-[82px] px-4 sm:px-5">
+          <AccordionTrigger className="min-h-[68px] px-3.5 py-2.5 sm:px-4">
             <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
               <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-sm font-semibold tabular-nums text-primary" aria-hidden="true">{String(moduleIndex + 1).padStart(2, "0")}</span>
               <span className="min-w-0 flex-1">

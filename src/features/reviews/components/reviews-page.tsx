@@ -90,7 +90,7 @@ function EmptyState({ tab }: { tab: Tab }) {
       ? { icon: CalendarClock, title: "Nenhuma revisão futura", description: "As próximas etapas aparecem aqui quando seus estudos registrados tiverem novas datas agendadas." }
       : { icon: Check, title: "Nenhuma revisão concluída", description: "Depois que você registrar uma revisão, o resultado ficará disponível neste histórico." };
   const Icon = content.icon;
-  return <div className="grid min-h-48 place-items-center rounded-xl border border-dashed px-6 py-7 text-center"><div className="max-w-sm"><span className="mx-auto mb-3 grid size-12 place-items-center rounded-xl bg-muted text-muted-foreground"><Icon aria-hidden="true" className="size-5" /></span><h3 className="text-sm font-semibold">{content.title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{content.description}</p></div></div>;
+  return <div className="grid min-h-36 place-items-center rounded-xl border border-dashed px-5 py-5 text-center"><div className="max-w-sm"><span className="mx-auto mb-3 grid size-10 place-items-center rounded-xl bg-muted text-muted-foreground"><Icon aria-hidden="true" className="size-5" /></span><h3 className="text-sm font-semibold">{content.title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{content.description}</p></div></div>;
 }
 
 function difficultyText(value: number | null) {

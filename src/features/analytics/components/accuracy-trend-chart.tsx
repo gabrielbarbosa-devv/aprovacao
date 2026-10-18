@@ -25,7 +25,7 @@ export function AccuracyTrendChart({ data, hasQuestionHistory }: AccuracyTrendCh
       <CardContent role="region" aria-labelledby="accuracy-trend-title" className="min-w-0">
         {hasTrendData ? (
           <>
-            <ChartContainer config={chartConfig} className="h-[230px] min-h-[230px] w-full" role="group" aria-label="Gráfico de aproveitamento semanal">
+            <ChartContainer config={chartConfig} className="h-48 min-h-48 w-full sm:h-52 sm:min-h-52" role="group" aria-label="Gráfico de aproveitamento semanal">
               <LineChart accessibilityLayer data={data} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
                 <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} minTickGap={20} />

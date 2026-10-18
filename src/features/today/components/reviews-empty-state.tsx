@@ -21,7 +21,7 @@ export function ReviewsEmptyState({ count, items, today }: { count: number; item
     );
   }
   return (
-    <div className="flex min-h-48 flex-col items-center justify-center px-5 py-6 text-center">
+    <div className="flex min-h-36 flex-col items-center justify-center px-5 py-5 text-center">
       <span className="grid size-14 place-items-center rounded-2xl bg-muted text-muted-foreground"><RefreshCw aria-hidden="true" className="size-5" /></span>
       <h3 className="mt-4 text-sm font-semibold">Nenhuma revisão pendente</h3>
       <p className="mt-2 max-w-xs text-sm leading-5 text-muted-foreground">Ao registrar estudos, as revisões aparecem nesta fila na data agendada.</p>

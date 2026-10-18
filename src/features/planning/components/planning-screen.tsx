@@ -94,7 +94,7 @@ export function PlanningScreen({ data }: { data: PlanningData }) {
               {days.map((day) => {
                 const dayBlocks = blocksByDate.get(day) ?? [];
                 const isSelected = selectedDate === day;
-                return <section key={day} aria-label={`${formatWeekday(day)} ${formatShortDate(day)}`} className={`min-h-40 rounded-xl border p-2.5 ${isSelected ? "border-primary ring-1 ring-primary/30" : ""}`}>
+                return <section key={day} aria-label={`${formatWeekday(day)} ${formatShortDate(day)}`} className={`min-h-32 rounded-xl border p-2 ${isSelected ? "border-primary ring-1 ring-primary/30" : ""}`}>
                   <button type="button" onClick={() => setSelectedDate(day)} aria-pressed={isSelected} className="mb-2 w-full rounded-md px-1 py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring">
                     <span className="block text-xs font-semibold capitalize">{formatWeekday(day)}</span><span className="mt-0.5 block text-[11px] text-muted-foreground">{formatShortDate(day)}</span>
                   </button>
