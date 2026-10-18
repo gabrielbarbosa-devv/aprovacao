@@ -13,6 +13,7 @@ export type Subject = {
   name: string;
   colorToken: SubjectColorToken | null;
   sortOrder: number;
+  isFocus: boolean;
   archivedAt: string | null;
   topics: SubjectTopic[];
   futureBlockCount: number;

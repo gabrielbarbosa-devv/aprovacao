@@ -3,6 +3,7 @@
 import { useMemo, useState, type KeyboardEvent } from "react";
 import { Archive, BookOpen, Plus } from "lucide-react";
 import type { Subject } from "@/features/subjects/domain/types";
+import { getActiveSubjectFocusGroups } from "@/features/subjects/domain/focus-groups";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +18,9 @@ export function SubjectsPage({ subjects }: { subjects: Subject[] }) {
   const activeSubjects = useMemo(() => subjects.filter((subject) => subject.archivedAt === null), [subjects]);
   const archivedSubjects = useMemo(() => subjects.filter((subject) => subject.archivedAt !== null), [subjects]);
   const visibleSubjects = tab === "ativas" ? activeSubjects : archivedSubjects;
-  const prioritySubjects = tab === "ativas" ? visibleSubjects.filter((subject) => subject.sortOrder <= 7) : [];
-  const otherSubjects = tab === "ativas" ? visibleSubjects.filter((subject) => subject.sortOrder > 7) : visibleSubjects;
+  const { focusSubjects, otherSubjects: activeOtherSubjects } = useMemo(() => getActiveSubjectFocusGroups(subjects), [subjects]);
+  const prioritySubjects = tab === "ativas" ? focusSubjects : [];
+  const otherSubjects = tab === "ativas" ? activeOtherSubjects : visibleSubjects;
 
   function handleTabKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "Home" && event.key !== "End") return;
@@ -57,12 +59,12 @@ export function SubjectsPage({ subjects }: { subjects: Subject[] }) {
               <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
                 <div>
                   <h2 id="priority-subjects-title" className="text-sm font-semibold">Foco principal</h2>
-                  <p className="mt-0.5 text-xs text-muted-foreground">Ordem atual do currículo; não representa peso oficial de edital.</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">Matérias que você escolheu manter em destaque. A ordem segue o currículo.</p>
                 </div>
                 <Badge variant="secondary">{prioritySubjects.length} {prioritySubjects.length === 1 ? "matéria" : "matérias"}</Badge>
               </div>
               <div className="grid gap-2 xl:grid-cols-2">
-                {prioritySubjects.map((subject, index) => <SubjectRow key={subject.id} subject={subject} activeSubjectIds={activeSubjects.map((activeSubject) => activeSubject.id)} activeIndex={index} />)}
+                {prioritySubjects.map((subject) => <SubjectRow key={subject.id} subject={subject} activeSubjectIds={activeSubjects.map((activeSubject) => activeSubject.id)} activeIndex={activeSubjects.findIndex((activeSubject) => activeSubject.id === subject.id)} />)}
               </div>
             </section> : null}
             {otherSubjects.length > 0 ? <section aria-labelledby="other-subjects-title">
@@ -74,7 +76,7 @@ export function SubjectsPage({ subjects }: { subjects: Subject[] }) {
                 <Badge variant="outline">{otherSubjects.length}</Badge>
               </div>
               <div className="grid gap-2 xl:grid-cols-2">
-                {otherSubjects.map((subject, index) => <SubjectRow key={subject.id} subject={subject} activeSubjectIds={activeSubjects.map((activeSubject) => activeSubject.id)} activeIndex={prioritySubjects.length + index} />)}
+                {otherSubjects.map((subject) => <SubjectRow key={subject.id} subject={subject} activeSubjectIds={activeSubjects.map((activeSubject) => activeSubject.id)} activeIndex={activeSubjects.findIndex((activeSubject) => activeSubject.id === subject.id)} />)}
               </div>
             </section> : null}
             {tab === "arquivadas" ? <div className="grid gap-2 xl:grid-cols-2">

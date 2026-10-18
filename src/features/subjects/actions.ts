@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/require-user";
-import { archiveSubjectSchema, createSubjectSchema, reorderSubjectsSchema, subjectIdSchema, updateSubjectSchema } from "@/features/subjects/domain/schemas";
+import { archiveSubjectSchema, createSubjectSchema, reorderSubjectsSchema, subjectIdSchema, updateSubjectFocusSchema, updateSubjectSchema } from "@/features/subjects/domain/schemas";
 import type { SubjectActionResult } from "@/features/subjects/domain/types";
 
 export async function createSubjectAction(input: unknown): Promise<SubjectActionResult> {
@@ -39,6 +39,19 @@ export async function updateSubjectAction(input: unknown): Promise<SubjectAction
   revalidateSubjects();
   revalidatePath("/planejamento");
   revalidatePath("/");
+  return { ok: true };
+}
+
+export async function updateSubjectFocusAction(input: unknown): Promise<SubjectActionResult> {
+  const parsed = updateSubjectFocusSchema.safeParse(input);
+  if (!parsed.success) return invalidResult(parsed.error.issues[0]?.message);
+  const { user, supabase } = await requireUser();
+  const { data, error } = await supabase.from("subjects").update({ is_focus: parsed.data.isFocus })
+    .eq("id", parsed.data.id).eq("user_id", user.id).is("archived_at", null)
+    .select("id").maybeSingle();
+  if (error) return mapWriteError(error.code);
+  if (!data) return { ok: false, message: "Matéria não encontrada ou arquivada. Atualize a página." };
+  revalidateSubjects();
   return { ok: true };
 }
 

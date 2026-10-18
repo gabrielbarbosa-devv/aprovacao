@@ -19,6 +19,11 @@ export const updateSubjectSchema = createSubjectSchema.extend({
 
 export const subjectIdSchema = z.string().uuid("Matéria inválida.");
 
+export const updateSubjectFocusSchema = z.object({
+  id: z.string().uuid("Matéria inválida."),
+  isFocus: z.boolean(),
+});
+
 export const archiveSubjectSchema = z.object({
   id: z.string().uuid("Matéria inválida."),
   expectedFutureBlocks: z.number().int().nonnegative(),

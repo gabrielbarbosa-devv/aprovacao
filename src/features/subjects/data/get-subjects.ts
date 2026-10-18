@@ -18,7 +18,7 @@ export async function getSubjectsPageData(): Promise<SubjectsPageData> {
 
   const [subjectResult, topicResult, blockResult] = await Promise.all([
     supabase.from("subjects")
-      .select("id, name, color_token, sort_order, archived_at")
+      .select("id, name, color_token, sort_order, is_focus, archived_at")
       .eq("user_id", user.id)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true }),
@@ -49,6 +49,7 @@ export async function getSubjectsPageData(): Promise<SubjectsPageData> {
     name: subject.name,
     colorToken: isSubjectColorToken(subject.color_token) ? subject.color_token : null,
     sortOrder: subject.sort_order,
+    isFocus: subject.is_focus,
     archivedAt: subject.archived_at,
     topics: (topicResult.data ?? [])
       .filter((topic) => topic.subject_id === subject.id && topic.archived_at === null)

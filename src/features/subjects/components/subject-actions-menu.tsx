@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { Menu } from "@base-ui/react/menu";
-import { Archive, ArrowDown, ArrowUp, Ellipsis, Pencil, RotateCcw, Trash2 } from "lucide-react";
+import { Archive, ArrowDown, ArrowUp, Ellipsis, Pencil, RotateCcw, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { archiveSubjectAction, deleteEmptySubjectAction, reorderSubjectsAction, restoreSubjectAction } from "@/features/subjects/actions";
+import { archiveSubjectAction, deleteEmptySubjectAction, reorderSubjectsAction, restoreSubjectAction, updateSubjectFocusAction } from "@/features/subjects/actions";
 import type { Subject, SubjectActionResult } from "@/features/subjects/domain/types";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -57,6 +57,7 @@ export function SubjectActionsMenu({ subject, activeSubjectIds, activeIndex }: {
         <Menu.Positioner sideOffset={6} align="end" className="z-50 outline-none">
           <Menu.Popup className="min-w-48 rounded-xl border bg-popover p-1.5 text-popover-foreground shadow-md outline-none">
             <Menu.Item onClick={() => setEditing(true)} className="flex h-9 cursor-default items-center gap-2 rounded-lg px-2.5 text-sm outline-none data-highlighted:bg-muted"><Pencil aria-hidden="true" className="size-4" />Editar</Menu.Item>
+            <Menu.Item disabled={busy} onClick={() => void run(() => updateSubjectFocusAction({ id: subject.id, isFocus: !subject.isFocus }), subject.isFocus ? "Matéria removida do foco principal." : "Matéria adicionada ao foco principal.")} className="flex h-9 cursor-default items-center gap-2 rounded-lg px-2.5 text-sm outline-none data-highlighted:bg-muted data-disabled:cursor-not-allowed data-disabled:opacity-50"><Star aria-hidden="true" className="size-4" />{subject.isFocus ? "Remover do foco principal" : "Adicionar ao foco principal"}</Menu.Item>
             <Menu.Item disabled={!activeSubjectIds || activeIndex === 0} onClick={() => void move(-1)} className="flex h-9 cursor-default items-center gap-2 rounded-lg px-2.5 text-sm outline-none data-highlighted:bg-muted data-disabled:cursor-not-allowed data-disabled:opacity-50"><ArrowUp aria-hidden="true" className="size-4" />Mover para cima</Menu.Item>
             <Menu.Item disabled={!activeSubjectIds || activeIndex >= (activeSubjectIds.length - 1)} onClick={() => void move(1)} className="flex h-9 cursor-default items-center gap-2 rounded-lg px-2.5 text-sm outline-none data-highlighted:bg-muted data-disabled:cursor-not-allowed data-disabled:opacity-50"><ArrowDown aria-hidden="true" className="size-4" />Mover para baixo</Menu.Item>
             <Menu.Item onClick={() => setConfirmArchive(true)} className="flex h-9 cursor-default items-center gap-2 rounded-lg px-2.5 text-sm outline-none data-highlighted:bg-muted"><Archive aria-hidden="true" className="size-4" />Arquivar</Menu.Item>

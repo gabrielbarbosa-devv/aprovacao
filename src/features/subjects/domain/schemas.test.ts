@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createSubjectSchema, reorderSubjectsSchema, subjectNameSchema } from "./schemas";
+import { createSubjectSchema, reorderSubjectsSchema, subjectNameSchema, updateSubjectFocusSchema } from "./schemas";
 
 describe("subject schemas", () => {
   it("normalizes spacing before the subject is persisted", () => {
@@ -19,5 +19,12 @@ describe("subject schemas", () => {
     const id = "123e4567-e89b-42d3-a456-426614174000";
     expect(reorderSubjectsSchema.safeParse([id]).success).toBe(true);
     expect(reorderSubjectsSchema.safeParse([id, id]).success).toBe(false);
+  });
+
+  it("accepts only an explicit focus choice for a valid subject", () => {
+    const id = "123e4567-e89b-42d3-a456-426614174000";
+    expect(updateSubjectFocusSchema.parse({ id, isFocus: true })).toEqual({ id, isFocus: true });
+    expect(updateSubjectFocusSchema.safeParse({ id, isFocus: "true" }).success).toBe(false);
+    expect(updateSubjectFocusSchema.safeParse({ id: "subject-1", isFocus: false }).success).toBe(false);
   });
 });

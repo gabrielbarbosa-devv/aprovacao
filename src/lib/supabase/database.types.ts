@@ -167,6 +167,7 @@ export type Database = {
           color_token: string | null
           created_at: string
           id: string
+          is_focus: boolean
           name: string
           sort_order: number
           updated_at: string
@@ -177,6 +178,7 @@ export type Database = {
           color_token?: string | null
           created_at?: string
           id?: string
+          is_focus?: boolean
           name: string
           sort_order?: number
           updated_at?: string
@@ -187,6 +189,7 @@ export type Database = {
           color_token?: string | null
           created_at?: string
           id?: string
+          is_focus?: boolean
           name?: string
           sort_order?: number
           updated_at?: string
