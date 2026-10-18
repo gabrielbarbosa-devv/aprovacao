@@ -109,7 +109,7 @@ Nesta etapa foram abertos os três editais oficiais. A conferência validou o ca
 - Sem novas matérias ou tópicos; títulos ativos não apresentaram grupos duplicados após normalização (caixa/espaços/pontuação).
 - Nenhum estado, prioridade, módulo, bloco ou histórico de usuário alterado.
 - Não foi testado o `UPDATE` por um usuário não proprietário. RLS foi lida no banco, mas o teste cruzado requer segunda identidade autenticada; não foi feito nesta validação.
-- O botão de foco no menu foi implementado, mas a UI publicada observada ainda é a versão anterior. A validação interativa da nova versão só será possível após o deploy; não alternar e deixar alterada a preferência real do usuário para fins de teste.
+- O deploy de produção do commit `fadb97f` foi verificado como **Ready/Current** na Vercel. Na tela autenticada `/materias`, o contador mostra 12 matérias no foco e 7 nas demais; Português, Raciocínio Lógico, Matemática, Constitucional, Administrativo, Processual Penal, Física, Penal, Informática, Estatística, Contabilidade e Língua Estrangeira aparecem no primeiro grupo. O menu de Raciocínio Lógico apresenta “Remover do foco principal”. Não cliquei nessa ação para não alterar a preferência real do usuário durante o teste. O update cross-user não foi exercitado com uma segunda identidade.
 
 ## Próximo gate
 
