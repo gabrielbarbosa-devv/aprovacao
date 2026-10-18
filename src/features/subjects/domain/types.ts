@@ -1,9 +1,11 @@
+import type { TopicStatus } from "@/features/topics/domain/types";
+
 export type SubjectColorToken = "blue" | "green" | "violet" | "orange" | "rose";
 
 export type SubjectTopic = {
   id: string;
   title: string;
-  status: "nao_iniciado" | "em_andamento" | "concluido";
+  status: TopicStatus;
 };
 
 export type Subject = {

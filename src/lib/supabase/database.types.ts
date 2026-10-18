@@ -104,9 +104,12 @@ export type Database = {
         Row: {
           archived_at: string | null
           created_at: string
+          estimated_minutes: number | null
           id: string
+          notes: string | null
           priority: string
           sort_order: number
+          source_url: string | null
           status: string
           subject_id: string
           title: string
@@ -116,9 +119,12 @@ export type Database = {
         Insert: {
           archived_at?: string | null
           created_at?: string
+          estimated_minutes?: number | null
           id?: string
+          notes?: string | null
           priority?: string
           sort_order?: number
+          source_url?: string | null
           status?: string
           subject_id: string
           title: string
@@ -128,9 +134,12 @@ export type Database = {
         Update: {
           archived_at?: string | null
           created_at?: string
+          estimated_minutes?: number | null
           id?: string
+          notes?: string | null
           priority?: string
           sort_order?: number
+          source_url?: string | null
           status?: string
           subject_id?: string
           title?: string
@@ -179,6 +188,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      archive_topic: {
+        Args: { p_expected_open_blocks: number; p_topic_id: string }
+        Returns: string
+      }
       archive_subject: {
         Args: { p_expected_future_blocks: number; p_subject_id: string }
         Returns: string
@@ -202,6 +215,10 @@ export type Database = {
         Returns: string
       }
       create_starter_plan: { Args: { p_start_date: string }; Returns: string }
+      reorder_topics: {
+        Args: { p_subject_id: string; p_topic_ids: string[] }
+        Returns: string
+      }
       start_study_block: { Args: { p_block_id: string }; Returns: string }
       update_planned_study_block: {
         Args: {

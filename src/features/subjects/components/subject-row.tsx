@@ -1,12 +1,9 @@
-"use client";
-
-import { useState } from "react";
+import Link from "next/link";
 import { BookOpen, ChevronRight } from "lucide-react";
 import type { Subject } from "@/features/subjects/domain/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SubjectActionsMenu } from "@/features/subjects/components/subject-actions-menu";
-import { SubjectDetailsDialog } from "@/features/subjects/components/subject-details-dialog";
 
 const colorClasses: Record<NonNullable<Subject["colorToken"]>, string> = {
   blue: "bg-primary/10 text-primary",
@@ -17,41 +14,35 @@ const colorClasses: Record<NonNullable<Subject["colorToken"]>, string> = {
 };
 
 export function SubjectRow({ subject, activeSubjectIds, activeIndex }: { subject: Subject; activeSubjectIds?: string[]; activeIndex: number }) {
-  const count = subject.topics.length;
-  const notStartedCount = subject.topics.filter((topic) => topic.status === "nao_iniciado").length;
-  const inProgressCount = subject.topics.filter((topic) => topic.status === "em_andamento").length;
-  const completedCount = subject.topics.filter((topic) => topic.status === "concluido").length;
-  const statusLabel = count === 0
-    ? "Sem tópicos"
-    : [notStartedCount > 0 ? `${notStartedCount} não iniciados` : "", inProgressCount > 0 ? `${inProgressCount} em andamento` : "", completedCount > 0 ? `${completedCount} concluídos` : ""]
-      .filter(Boolean).join(" · ") || `${count} não iniciados`;
-  const colorClass = colorClasses[subject.colorToken ?? "blue"];
   const archived = subject.archivedAt !== null;
+  const colorClass = colorClasses[subject.colorToken ?? "blue"];
+  const counts = subject.topics.reduce<Record<string, number>>((result, topic) => {
+    result[topic.status] = (result[topic.status] ?? 0) + 1;
+    return result;
+  }, {});
+  const statusLabel = subject.topics.length === 0
+    ? "Sem tópicos"
+    : [
+      counts.nao_iniciado ? `${counts.nao_iniciado} não iniciados` : "",
+      counts.em_andamento ? `${counts.em_andamento} estudando` : "",
+      counts.revisando ? `${counts.revisando} revisando` : "",
+      counts.dominado ? `${counts.dominado} dominados` : "",
+      counts.concluido ? `${counts.concluido} concluídos` : "",
+    ].filter(Boolean).join(" · ");
+  const content = <>
+    <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${colorClass}`}><BookOpen aria-hidden="true" className="size-[18px]" /></span>
+    <span className="min-w-0 flex-1">
+      <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground"><span className="truncate">{subject.name}</span>{archived ? <Badge variant="secondary">Arquivada</Badge> : null}</span>
+      <span className="mt-1 block text-xs text-muted-foreground">{subject.topics.length} {subject.topics.length === 1 ? "tópico" : "tópicos"}{statusLabel ? ` · ${statusLabel}` : ""}</span>
+    </span>
+    <span className="hidden shrink-0 text-xs text-muted-foreground md:inline">{archived ? "Restaurar para abrir" : "Ver conteúdo"}</span>
+    <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+  </>;
 
   return <div className="flex items-center gap-2 rounded-xl border bg-background p-2 transition-colors hover:bg-muted/20 sm:p-3">
-    <SubjectDetailTrigger subject={subject} colorClass={colorClass} count={count} statusLabel={statusLabel} archived={archived} />
+    {archived
+      ? <Button type="button" variant="ghost" disabled className="h-auto min-w-0 flex-1 justify-start gap-3 rounded-lg px-2 py-2 text-left sm:gap-4 sm:px-2.5" aria-label={`Matéria arquivada: ${subject.name}`}>{content}</Button>
+      : <Link href={`/materias/${subject.id}`} className="flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left outline-none hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring sm:gap-4 sm:px-2.5" aria-label={`Abrir tópicos de ${subject.name}`}>{content}</Link>}
     <SubjectActionsMenu subject={subject} activeSubjectIds={activeSubjectIds} activeIndex={activeIndex} />
   </div>;
-}
-
-function SubjectDetailTrigger({ subject, colorClass, count, statusLabel, archived }: {
-  subject: Subject;
-  colorClass: string;
-  count: number;
-  statusLabel: string;
-  archived: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  return <>
-    <Button type="button" variant="ghost" onClick={() => setOpen(true)} aria-label={`Abrir conteúdo de ${subject.name}`} className="h-auto min-w-0 flex-1 justify-start gap-3 rounded-lg px-2 py-2 text-left sm:gap-4 sm:px-2.5">
-      <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${colorClass}`}><BookOpen aria-hidden="true" className="size-[18px]" /></span>
-      <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground"><span className="truncate">{subject.name}</span>{archived ? <Badge variant="secondary">Arquivada</Badge> : null}</span>
-        <span className="mt-1 block text-xs text-muted-foreground">{count} {count === 1 ? "tópico" : "tópicos"} · {statusLabel}</span>
-      </span>
-      <span className="hidden shrink-0 text-xs text-muted-foreground md:inline">Ver conteúdo</span>
-      <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
-    </Button>
-    <SubjectDetailsDialog subject={subject} open={open} onOpenChange={setOpen} />
-  </>;
 }

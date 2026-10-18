@@ -2,6 +2,7 @@ import "server-only";
 import { requireUser } from "@/lib/auth/require-user";
 import { getStudyDay } from "@/lib/date/study-day";
 import type { Subject, SubjectsPageData, SubjectColorToken } from "@/features/subjects/domain/types";
+import type { TopicStatus } from "@/features/topics/domain/types";
 
 const DEFAULT_TIME_ZONE = "America/Sao_Paulo";
 
@@ -66,7 +67,7 @@ function isSubjectColorToken(value: string | null): value is SubjectColorToken {
   return value === "blue" || value === "green" || value === "violet" || value === "orange" || value === "rose";
 }
 
-function normalizeTopicStatus(value: string): "nao_iniciado" | "em_andamento" | "concluido" {
-  if (value === "em_andamento" || value === "concluido") return value;
+function normalizeTopicStatus(value: string): TopicStatus {
+  if (value === "em_andamento" || value === "revisando" || value === "dominado" || value === "concluido") return value;
   return "nao_iniciado";
 }
