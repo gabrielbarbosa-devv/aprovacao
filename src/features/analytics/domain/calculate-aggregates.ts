@@ -6,7 +6,7 @@ import type {
   AnalyticsSummary,
   SubjectPerformance,
   WeeklyAccuracy,
-} from "@/features/analytics/domain/types";
+} from "./types.ts";
 
 type QuestionRecord = {
   studiedOn: string;

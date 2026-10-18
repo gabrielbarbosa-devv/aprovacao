@@ -5,11 +5,12 @@ import { AuthForm } from "@/features/auth/components/auth-form";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getSafeAuthReturnTo } from "@/features/auth/return-to";
 
-async function LoginContent() {
+async function LoginContent({ returnTo }: { returnTo: string }) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getUser();
-  if (data.user) redirect("/");
+  if (data.user) redirect(returnTo);
 
   return (
     <main className="grid min-h-svh place-items-center bg-muted/30 p-4">
@@ -23,18 +24,23 @@ async function LoginContent() {
             <CardDescription>Acesse seu espaço pessoal de organização dos estudos.</CardDescription>
           </div>
         </CardHeader>
-        <CardContent><AuthForm /></CardContent>
+        <CardContent><AuthForm returnTo={returnTo} /></CardContent>
       </Card>
     </main>
   );
 }
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ returnTo?: string }> }) {
   return (
     <Suspense fallback={<LoginLoading />}>
-      <LoginContent />
+      <LoginEntry searchParams={searchParams} />
     </Suspense>
   );
+}
+
+async function LoginEntry({ searchParams }: { searchParams: Promise<{ returnTo?: string }> }) {
+  const params = await searchParams;
+  return <LoginContent returnTo={getSafeAuthReturnTo(params.returnTo)} />;
 }
 
 function LoginLoading() {

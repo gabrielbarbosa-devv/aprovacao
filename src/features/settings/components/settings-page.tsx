@@ -147,6 +147,11 @@ export function SettingsPage({ data }: { data: SettingsPageData }) {
               <h2 id="settings-export-heading" className="text-lg font-semibold">Seus dados</h2>
               <p className="mt-1 text-sm text-muted-foreground">Exporte seus registros para guardar uma cópia local no seu dispositivo.</p>
 
+              <div className="mt-4 flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div><h3 className="text-sm font-semibold">Aplicativos conectados</h3><p className="mt-1 text-sm text-muted-foreground">Revise ou revogue o acesso OAuth concedido a outros aplicativos.</p></div>
+                <Button render={<Link href="/configuracoes/conexoes" />} variant="outline" className="shrink-0">Gerenciar conexões</Button>
+              </div>
+
               <div className="mt-5 space-y-3">
                 <ExportRow title="Exportar histórico" description="Matérias, tópicos, planejamento, sessões, questões, caderno de erros, revisões e concursos." kind="json" busy={exporting === "json"} disabled={exporting !== null} onDownload={downloadExport} />
                 <ExportRow title="Exportar planilha" description="Todos os lotes de questões, inclusive os removidos logicamente, em CSV com proteção contra fórmulas." kind="csv" busy={exporting === "csv"} disabled={exporting !== null} onDownload={downloadExport} />

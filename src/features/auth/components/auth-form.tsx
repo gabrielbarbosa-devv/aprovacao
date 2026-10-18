@@ -10,13 +10,14 @@ import { Label } from "@/components/ui/label";
 
 const initialState: AuthActionResult = { status: "idle", message: "" };
 
-export function AuthForm() {
+export function AuthForm({ returnTo = "/" }: { returnTo?: string }) {
   const [signup, setSignup] = useState(false);
   const action = signup ? signupAction : loginAction;
   const [result, formAction, pending] = useActionState<AuthActionResult, FormData>(action, initialState);
 
   return (
     <form action={formAction} className="space-y-5">
+      <input type="hidden" name="returnTo" value={returnTo} />
       <div className="space-y-2">
         <Label htmlFor="email">E-mail</Label>
         <div className="relative">

@@ -1,0 +1,13 @@
+project_id = "mnupjnlbsjsclxwlduon"
+
+[auth]
+site_url = "http://localhost:3000"
+
+[auth.oauth_server]
+enabled = true
+authorization_url_path = "/oauth/consent"
+allow_dynamic_registration = true
+
+[functions.operacao-aprovacao-mcp]
+# The function performs OAuth protected-resource discovery before verifying user tokens.
+verify_jwt = false

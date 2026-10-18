@@ -16,7 +16,7 @@ The accompanying curriculum excerpt is incomplete JSON (it ends in the middle of
 - App: Next.js App Router 16.4.2, React 19, TypeScript, Tailwind 4, shadcn/Base UI, Supabase JS/SSR. Feature code already uses a domain/data/components/actions layout.
 - Existing Supabase migrations cover the product entities described below. `supabase/config.toml` and `supabase/functions/` do not exist yet.
 - `.env.local` is intentionally not read or copied into this document. Per README it contains a project URL and publishable key only; no service-role secret is part of the application configuration.
-- Read-only inspection of the linked Supabase dashboard showed **Authentication → OAuth Server is disabled**. The production schema, signing-key mode, live RLS state, and records were not queried. The local migration chain is evidence of intended schema, not proof that the live project is identical. No production setting or database was changed.
+- At initial phase-A inspection, **Authentication → OAuth Server appeared disabled**. The user later supplied a dashboard screenshot showing the toggle selected on, `Site URL = http://localhost:3000`, `/oauth/consent`, and dynamic registration off. The screenshot still showed Save Changes, so whether this state was persisted is unverified. Signing-key mode, production schema/RLS, and records were not queried. The local migration chain is evidence of intended schema, not proof that the live project is identical. No production setting or database was changed by Codex.
 - The repository was clean at the checkpoint above. No migration or MCP implementation has been made during this audit.
 
 ## Current architecture and source of truth
@@ -74,7 +74,7 @@ Question totals are facts recorded either on a study session or a question batch
 
 ## Risks and unknowns
 
-1. **Production identity configuration is not ready.** The OAuth Server toggle is currently off. The signing-key mode, dynamic client registration, consent route, and public HTTPS site URL still need to be verified/configured. Supabase's current authenticated MCP middleware requires these prerequisites.
+1. **Production identity configuration is not ready.** The supplied screenshot shows OAuth selected on but save status is unknown; it still shows `localhost` for the site URL and dynamic client registration off. Signing-key mode, the production consent URL, and dynamic registration still need review. Supabase's current authenticated MCP middleware requires these prerequisites.
 2. **Live schema/RLS drift is unverified.** Local migrations and generated TypeScript types are present, but without a read-only production schema inspection, they do not prove which migrations or policies are applied in the live project.
 3. **Existing app boundaries are Next-specific.** `requireUser`, `server-only`, cookies, and `revalidatePath` cannot run in a Deno Edge Function. Keep MCP transport isolated and pass its verified user-scoped Supabase client to feature application use cases/repositories; only share portable domain code or call existing transactional Postgres routines.
 4. **Idempotency is uneven.** `study_sessions`, `question_batches`, and `mistake_entries` already have per-user operation keys. Settings/subject/topic/exam/plan/review mutations do not share one idempotency ledger. A retry-safe, per-user/per-client operation record must be atomic with a domain mutation; adding a non-transactional cache is insufficient.
@@ -111,7 +111,7 @@ Question totals are facts recorded either on a study session or a question batch
 - Recommended transport: authenticated Supabase Edge Function using the official Supabase Auth OAuth 2.1 resource-server middleware. This produces the single HTTPS URL the user wants without exposing database credentials.
 - No URL is currently live. The future URL is a path proposal only: `https://<project-ref>.supabase.co/functions/v1/operacao-aprovacao-mcp`.
 - Phase A added no migration; migration list: **none**. No database, auth, GitHub, or production Vercel changes were made.
-- Blocked from claiming production readiness because OAuth Server is disabled and signing-key mode, live schema/RLS, and a real-user MCP OAuth test are unverified.
+- Blocked from claiming production readiness because OAuth save status, signing-key mode, live schema/RLS, and a real-user MCP OAuth test are unverified.
 - Phase A is complete. Proceeding beyond this audit requires building and testing the read-only local MCP endpoint. A later approval is mandatory before enabling public write tools or deploying a production MCP endpoint. ChatGPT connection remains subject to the user's account/workspace eligibility.
 
 ## Official implementation references checked
