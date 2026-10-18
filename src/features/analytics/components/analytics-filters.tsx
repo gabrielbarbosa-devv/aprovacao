@@ -11,6 +11,18 @@ import type { AnalyticsFilters, AnalyticsSort, AnalyticsSubject } from "@/featur
 
 type AnalyticsFiltersProps = { filters: AnalyticsFilters; subjects: AnalyticsSubject[] };
 
+const periodOptions = [
+  { value: "7", label: "Últimos 7 dias" },
+  { value: "30", label: "Últimos 30 dias" },
+  { value: "90", label: "Últimos 90 dias" },
+  { value: "custom", label: "Personalizado" },
+] as const;
+const sortOptions = [
+  { value: "questions", label: "Questões resolvidas" },
+  { value: "correct", label: "Acertos" },
+  { value: "accuracy", label: "Aproveitamento" },
+] as const;
+
 export function AnalyticsFiltersBar({ filters, subjects }: AnalyticsFiltersProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -20,6 +32,10 @@ export function AnalyticsFiltersBar({ filters, subjects }: AnalyticsFiltersProps
   const [subjectId, setSubjectId] = useState(filters.subjectId ?? "all");
   const [sortBy, setSortBy] = useState<AnalyticsSort>(filters.sortBy);
   const [rangeError, setRangeError] = useState(false);
+  const subjectOptions = [
+    { value: "all", label: "Todas as matérias" },
+    ...subjects.map((subject) => ({ value: subject.id, label: `${subject.name}${subject.archivedAt ? " (arquivada)" : ""}` })),
+  ];
 
   function applyFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -41,7 +57,7 @@ export function AnalyticsFiltersBar({ filters, subjects }: AnalyticsFiltersProps
     <form onSubmit={applyFilters} className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4">
       <div className="grid min-w-36 gap-2">
         <Label htmlFor="analytics-period">Período</Label>
-        <Select value={period} onValueChange={(value) => { if (value === "7" || value === "30" || value === "90" || value === "custom") setPeriod(value); }}>
+        <Select items={periodOptions} value={period} onValueChange={(value) => { if (value === "7" || value === "30" || value === "90" || value === "custom") setPeriod(value); }}>
           <SelectTrigger id="analytics-period" aria-label="Período" className="w-full sm:w-44">
             <SelectValue />
           </SelectTrigger>
@@ -56,7 +72,7 @@ export function AnalyticsFiltersBar({ filters, subjects }: AnalyticsFiltersProps
 
       <div className="grid min-w-44 gap-2">
         <Label htmlFor="analytics-subject">Matéria</Label>
-        <Select value={subjectId} onValueChange={(value) => { if (value) setSubjectId(value); }}>
+        <Select items={subjectOptions} value={subjectId} onValueChange={(value) => { if (value) setSubjectId(value); }}>
           <SelectTrigger id="analytics-subject" aria-label="Matéria" className="w-full sm:w-52">
             <SelectValue />
           </SelectTrigger>
@@ -73,7 +89,7 @@ export function AnalyticsFiltersBar({ filters, subjects }: AnalyticsFiltersProps
 
       <div className="grid min-w-40 gap-2">
         <Label htmlFor="analytics-sort">Ordenar matérias</Label>
-        <Select value={sortBy} onValueChange={(value) => { if (value === "questions" || value === "correct" || value === "accuracy") setSortBy(value); }}>
+        <Select items={sortOptions} value={sortBy} onValueChange={(value) => { if (value === "questions" || value === "correct" || value === "accuracy") setSortBy(value); }}>
           <SelectTrigger id="analytics-sort" aria-label="Ordenar matérias" className="w-full sm:w-48">
             <SelectValue />
           </SelectTrigger>
