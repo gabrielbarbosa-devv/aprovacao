@@ -1,5 +1,7 @@
 # Operação Aprovação — auditoria inicial do Lote 1
 
+> **Snapshot supersedido.** Os números deste relatório refletem uma consulta anterior. A consulta autenticada mais recente encontrou 260 tópicos ativos, 143 guias e 57 relações `exam_topics` no conjunto dos três alvos. Consulte [AUDITORIA_DE_FECHAMENTO_2026-10-18.md](./AUDITORIA_DE_FECHAMENTO_2026-10-18.md) para o estado atual. As contagens antigas permanecem abaixo apenas como histórico da execução anterior.
+
 **Data:** 18/10/2026  
 **Escopo:** leitura do repositório, consulta read-only ao Supabase e inspeção da interface autenticada em produção. Nenhum dado do banco foi gravado ou removido nesta etapa.
 
