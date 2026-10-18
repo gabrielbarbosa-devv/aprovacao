@@ -18,7 +18,7 @@ flowchart LR
   Grants --> Auth
 ```
 
-The deployed function URL is planned as `https://mnupjnlbsjsclxwlduon.supabase.co/functions/v1/operacao-aprovacao-mcp`. It is not live until the function is deployed and the project's production OAuth prerequisites are verified.
+The function is deployed at `https://mnupjnlbsjsclxwlduon.supabase.co/functions/v1/operacao-aprovacao-mcp`. Production OAuth uses the Vercel consent route at `https://aprovacao-tau.vercel.app/oauth/consent`; Codex CLI OAuth and MCP tool discovery have been verified.
 
 The function runs the official Supabase protected-resource middleware before user-token middleware. This order allows standards-based OAuth discovery while requiring valid Supabase user authentication for MCP operations. It never creates a service-role client. Every table query also includes the verified user's `user_id` in addition to existing RLS.
 
@@ -35,4 +35,4 @@ The MCP SDK creates a stateless server per HTTP request. `tools.ts` is the trans
 
 ## Local development config
 
-`supabase/config.toml` configures the local Supabase stack, not the production dashboard. It deliberately uses `http://localhost:3000` as its local consent site. Before any `supabase config push`, set the production Auth Site URL to the actual deployed frontend, confirm asymmetric JWT signing, review dynamic client registration, then explicitly apply the production settings. This phase does not push Auth config or deploy the Edge Function.
+`supabase/config.toml` configures the local Supabase stack, not the production dashboard. It deliberately uses `http://localhost:3000` as its local consent site. Production is configured separately in the Supabase dashboard with the Vercel site URL, `/oauth/consent`, OAuth server enabled, dynamic registration enabled, and ES256 signing. Avoid `supabase config push` unless every unrelated Auth setting in the local config has been reviewed for production impact.

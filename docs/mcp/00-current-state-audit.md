@@ -74,7 +74,7 @@ Question totals are facts recorded either on a study session or a question batch
 
 ## Risks and unknowns
 
-1. **Production identity configuration is not ready.** The supplied screenshot shows OAuth selected on but save status is unknown; it still shows `localhost` for the site URL and dynamic client registration off. Signing-key mode, the production consent URL, and dynamic registration still need review. Supabase's current authenticated MCP middleware requires these prerequisites.
+1. **Dynamic client registration is enabled.** Supabase warns that the public endpoint may attract spam registrations or malicious apps with phishing names. The user accepted this risk to allow Codex's automatic OAuth registration; user consent remains required for access.
 2. **Live schema/RLS drift is unverified.** Local migrations and generated TypeScript types are present, but without a read-only production schema inspection, they do not prove which migrations or policies are applied in the live project.
 3. **Existing app boundaries are Next-specific.** `requireUser`, `server-only`, cookies, and `revalidatePath` cannot run in a Deno Edge Function. Keep MCP transport isolated and pass its verified user-scoped Supabase client to feature application use cases/repositories; only share portable domain code or call existing transactional Postgres routines.
 4. **Idempotency is uneven.** `study_sessions`, `question_batches`, and `mistake_entries` already have per-user operation keys. Settings/subject/topic/exam/plan/review mutations do not share one idempotency ledger. A retry-safe, per-user/per-client operation record must be atomic with a domain mutation; adding a non-transactional cache is insufficient.
@@ -109,10 +109,11 @@ Question totals are facts recorded either on a study session or a question batch
 ## Current decision and blockers
 
 - Recommended transport: authenticated Supabase Edge Function using the official Supabase Auth OAuth 2.1 resource-server middleware. This produces the single HTTPS URL the user wants without exposing database credentials.
-- No URL is currently live. The future URL is a path proposal only: `https://<project-ref>.supabase.co/functions/v1/operacao-aprovacao-mcp`.
-- Phase A added no migration; migration list: **none**. No database, auth, GitHub, or production Vercel changes were made.
-- Blocked from claiming production readiness because OAuth save status, signing-key mode, live schema/RLS, and a real-user MCP OAuth test are unverified.
-- Phase A is complete. Proceeding beyond this audit requires building and testing the read-only local MCP endpoint. A later approval is mandatory before enabling public write tools or deploying a production MCP endpoint. ChatGPT connection remains subject to the user's account/workspace eligibility.
+- Production endpoint: `https://mnupjnlbsjsclxwlduon.supabase.co/functions/v1/operacao-aprovacao-mcp`.
+- Phase B is deployed to GitHub `main`, Vercel, and the Supabase Edge Function. Supabase Site URL is `https://aprovacao-tau.vercel.app`; OAuth consent path is `/oauth/consent`; dynamic registration is enabled after the user accepted Supabase's phishing/spam warning. The published JWKS contains an ES256 key.
+- The Codex CLI has an enabled OAuth connection named `operacao-aprovacao`; OAuth login and `tools/list` succeeded. No study records were read during that verification.
+- Phase A/B added no database migration. Production data-query RLS isolation and grant revocation remain unverified. No write tools are available; ChatGPT connection remains subject to account/workspace eligibility.
+- Phase A and the approved read-only Phase B deployment are complete. Any future write tools require a new explicit approval and a separate security review before deployment. ChatGPT connection remains subject to the user's account/workspace eligibility.
 
 ## Official implementation references checked
 
