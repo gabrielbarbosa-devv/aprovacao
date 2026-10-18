@@ -13,6 +13,15 @@ describe("topic schemas", () => {
     });
   });
 
+  it("accepts normalized null values when the server validates submitted optional fields again", () => {
+    expect(createTopicSchema.parse({
+      ...validFields,
+      sourceUrl: null,
+      notes: null,
+      subjectId: "123e4567-e89b-42d3-a456-426614174000",
+    })).toMatchObject({ sourceUrl: null, notes: null });
+  });
+
   it("rejects invalid or non-web URLs and invalid durations", () => {
     expect(topicFieldsSchema.safeParse({ ...validFields, sourceUrl: "javascript:alert(1)" }).success).toBe(false);
     expect(topicFieldsSchema.safeParse({ ...validFields, sourceUrl: "https://" }).success).toBe(false);
