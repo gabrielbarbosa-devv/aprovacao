@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      exam_targets: {
+        Row: { id: string; user_id: string; exam_name: string; institution: string; role_title: string; jurisdiction: string; current_stage: string; priority: string; exam_date: string | null; application_deadline: string | null; official_url: string | null; notes: string | null; archived_at: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; exam_name: string; institution: string; role_title: string; jurisdiction: string; current_stage?: string; priority?: string; exam_date?: string | null; application_deadline?: string | null; official_url?: string | null; notes?: string | null; archived_at?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; exam_name?: string; institution?: string; role_title?: string; jurisdiction?: string; current_stage?: string; priority?: string; exam_date?: string | null; application_deadline?: string | null; official_url?: string | null; notes?: string | null; archived_at?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      exam_subjects: {
+        Row: { id: string; user_id: string; exam_target_id: string; subject_id: string; importance: string | null; official_question_weight: number | null; source_url: string | null; created_at: string }
+        Insert: { id?: string; user_id: string; exam_target_id: string; subject_id: string; importance?: string | null; official_question_weight?: number | null; source_url?: string | null; created_at?: string }
+        Update: { id?: string; user_id?: string; exam_target_id?: string; subject_id?: string; importance?: string | null; official_question_weight?: number | null; source_url?: string | null; created_at?: string }
+        Relationships: [
+          { foreignKeyName: "exam_subjects_exam_target_id_user_id_fkey"; columns: ["exam_target_id", "user_id"]; isOneToOne: false; referencedRelation: "exam_targets"; referencedColumns: ["id", "user_id"] },
+          { foreignKeyName: "exam_subjects_subject_id_user_id_fkey"; columns: ["subject_id", "user_id"]; isOneToOne: false; referencedRelation: "subjects"; referencedColumns: ["id", "user_id"] },
+        ]
+      }
+      exam_topics: {
+        Row: { id: string; user_id: string; exam_target_id: string; topic_id: string; created_at: string }
+        Insert: { id?: string; user_id: string; exam_target_id: string; topic_id: string; created_at?: string }
+        Update: { id?: string; user_id?: string; exam_target_id?: string; topic_id?: string; created_at?: string }
+        Relationships: [
+          { foreignKeyName: "exam_topics_exam_target_id_user_id_fkey"; columns: ["exam_target_id", "user_id"]; isOneToOne: false; referencedRelation: "exam_targets"; referencedColumns: ["id", "user_id"] },
+          { foreignKeyName: "exam_topics_topic_id_user_id_fkey"; columns: ["topic_id", "user_id"]; isOneToOne: false; referencedRelation: "topics"; referencedColumns: ["id", "user_id"] },
+        ]
+      }
       study_sessions: {
         Row: { id: string; user_id: string; block_id: string | null; topic_id: string; operation_key: string; studied_on: string; duration_minutes: number; question_count: number; correct_count: number; notes: string | null; deleted_at: string | null; created_at: string; updated_at: string }
         Insert: { id?: string; user_id: string; block_id?: string | null; topic_id: string; operation_key: string; studied_on: string; duration_minutes: number; question_count?: number; correct_count?: number; notes?: string | null; deleted_at?: string | null; created_at?: string; updated_at?: string }
@@ -215,6 +239,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      save_exam_target: { Args: { p_target_id: string | null; p_exam_name: string; p_institution: string; p_role_title: string; p_jurisdiction: string; p_current_stage: string; p_priority: string; p_exam_date: string | null; p_application_deadline: string | null; p_official_url: string | null; p_notes: string | null; p_subject_ids: string[]; p_topic_ids: string[] }; Returns: Json }
       archive_topic: {
         Args: { p_expected_open_blocks: number; p_topic_id: string }
         Returns: string

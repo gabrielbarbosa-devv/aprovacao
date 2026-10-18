@@ -15,10 +15,8 @@ import { SignOutButton } from "@/components/sign-out-button";
 
 type SidebarProps = {
   email: string;
-  activeItem?: "hoje" | "planejamento" | "materias" | "revisoes";
+  activeItem?: "hoje" | "planejamento" | "materias" | "revisoes" | "concursos";
 };
-
-const unavailableItems = [{ label: "Concursos", icon: Trophy }] as const;
 
 function getInitials(email: string): string {
   const name = email.split("@")[0] ?? email;
@@ -78,20 +76,15 @@ export function Sidebar({ email, activeItem = "hoje" }: SidebarProps) {
           Revisões
           {activeItem === "revisoes" ? <span aria-hidden="true" className="ml-auto size-1.5 rounded-full bg-primary" /> : null}
         </Link>
-        {unavailableItems.map(({ label, icon: Icon }) => (
-          <Button
-            key={label}
-            type="button"
-            variant="ghost"
-            disabled
-            title={`${label}: disponível em uma próxima etapa.`}
-            className="h-11 justify-start gap-3 px-3 text-sm font-medium text-muted-foreground"
-          >
-            <Icon aria-hidden="true" className="size-4" />
-            <span>{label}</span>
-            <span className="ml-auto text-[10px] font-medium">Em breve</span>
-          </Button>
-        ))}
+        <Link
+          href="/concursos"
+          aria-current={activeItem === "concursos" ? "page" : undefined}
+          className={`flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring ${activeItem === "concursos" ? activeClass : "text-muted-foreground hover:bg-muted"}`}
+        >
+          <Trophy aria-hidden="true" className="size-4" />
+          Concursos
+          {activeItem === "concursos" ? <span aria-hidden="true" className="ml-auto size-1.5 rounded-full bg-primary" /> : null}
+        </Link>
       </nav>
 
       <div className="mt-auto pt-6">
