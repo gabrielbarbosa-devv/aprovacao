@@ -5,6 +5,7 @@ import {
   CircleDot,
   ClipboardList,
   Home,
+  NotebookPen,
   RefreshCw,
   Settings,
   Trophy,
@@ -16,7 +17,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 
 type SidebarProps = {
   email: string;
-  activeItem?: "hoje" | "planejamento" | "materias" | "revisoes" | "concursos" | "registros";
+  activeItem?: "hoje" | "planejamento" | "materias" | "revisoes" | "concursos" | "registros" | "caderno-de-erros";
 };
 
 function getInitials(email: string): string {
@@ -94,6 +95,15 @@ export function Sidebar({ email, activeItem = "hoje" }: SidebarProps) {
           <ClipboardList aria-hidden="true" className="size-4" />
           Registros
           {activeItem === "registros" ? <span aria-hidden="true" className="ml-auto size-1.5 rounded-full bg-primary" /> : null}
+        </Link>
+        <Link
+          href="/caderno-de-erros"
+          aria-current={activeItem === "caderno-de-erros" ? "page" : undefined}
+          className={`flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring ${activeItem === "caderno-de-erros" ? activeClass : "text-muted-foreground hover:bg-muted"}`}
+        >
+          <NotebookPen aria-hidden="true" className="size-4" />
+          Caderno de erros
+          {activeItem === "caderno-de-erros" ? <span aria-hidden="true" className="ml-auto size-1.5 rounded-full bg-primary" /> : null}
         </Link>
       </nav>
 

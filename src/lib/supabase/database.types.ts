@@ -49,6 +49,16 @@ export type Database = {
           { foreignKeyName: "question_batches_study_session_id_user_id_fkey"; columns: ["study_session_id", "user_id"]; isOneToOne: false; referencedRelation: "study_sessions"; referencedColumns: ["id", "user_id"] },
         ]
       }
+      mistake_entries: {
+        Row: { id: string; user_id: string; operation_key: string; subject_id: string; topic_id: string | null; question_batch_id: string | null; reason: string; thought: string; correct_rule: string; next_step: string | null; external_reference: string | null; status: string; deleted_at: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; operation_key: string; subject_id: string; topic_id?: string | null; question_batch_id?: string | null; reason: string; thought: string; correct_rule: string; next_step?: string | null; external_reference?: string | null; status?: string; deleted_at?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; operation_key?: string; subject_id?: string; topic_id?: string | null; question_batch_id?: string | null; reason?: string; thought?: string; correct_rule?: string; next_step?: string | null; external_reference?: string | null; status?: string; deleted_at?: string | null; created_at?: string; updated_at?: string }
+        Relationships: [
+          { foreignKeyName: "mistake_entries_subject_id_user_id_fkey"; columns: ["subject_id", "user_id"]; isOneToOne: false; referencedRelation: "subjects"; referencedColumns: ["id", "user_id"] },
+          { foreignKeyName: "mistake_entries_topic_id_user_id_fkey"; columns: ["topic_id", "user_id"]; isOneToOne: false; referencedRelation: "topics"; referencedColumns: ["id", "user_id"] },
+          { foreignKeyName: "mistake_entries_question_batch_id_user_id_fkey"; columns: ["question_batch_id", "user_id"]; isOneToOne: false; referencedRelation: "question_batches"; referencedColumns: ["id", "user_id"] },
+        ]
+      }
       study_sessions: {
         Row: { id: string; user_id: string; block_id: string | null; topic_id: string; operation_key: string; studied_on: string; duration_minutes: number; question_count: number; correct_count: number; notes: string | null; deleted_at: string | null; created_at: string; updated_at: string }
         Insert: { id?: string; user_id: string; block_id?: string | null; topic_id: string; operation_key: string; studied_on: string; duration_minutes: number; question_count?: number; correct_count?: number; notes?: string | null; deleted_at?: string | null; created_at?: string; updated_at?: string }
@@ -252,6 +262,8 @@ export type Database = {
     Functions: {
       save_question_batch: { Args: { p_batch_id: string | null; p_operation_key: string; p_studied_on: string; p_subject_id: string; p_topic_id: string | null; p_source_type: string; p_source_label: string; p_exam_target_id: string | null; p_study_session_id: string | null; p_question_count: number; p_correct_count: number; p_duration_minutes: number | null; p_notes: string | null; p_replaces_session_totals: boolean }; Returns: Json }
       delete_question_batch: { Args: { p_batch_id: string }; Returns: string }
+      save_mistake_entry: { Args: { p_entry_id: string | null; p_operation_key: string; p_subject_id: string; p_topic_id: string | null; p_question_batch_id: string | null; p_reason: string; p_thought: string; p_correct_rule: string; p_next_step: string | null; p_external_reference: string | null; p_status: string }; Returns: Json }
+      delete_mistake_entry: { Args: { p_entry_id: string }; Returns: string }
       save_exam_target: { Args: { p_target_id: string | null; p_exam_name: string; p_institution: string; p_role_title: string; p_jurisdiction: string; p_current_stage: string; p_priority: string; p_exam_date: string | null; p_application_deadline: string | null; p_official_url: string | null; p_notes: string | null; p_subject_ids: string[]; p_topic_ids: string[] }; Returns: Json }
       archive_topic: {
         Args: { p_expected_open_blocks: number; p_topic_id: string }
