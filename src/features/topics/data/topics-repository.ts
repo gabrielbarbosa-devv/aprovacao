@@ -13,14 +13,26 @@ export const topicsRepository = {
   },
 
   getSubjectTopics(supabase: TopicSupabaseClient, userId: string, subjectId: string) {
-    return supabase.from("topics").select("id, subject_id, title, status, priority, sort_order, notes, source_url, estimated_minutes, archived_at")
+    return supabase.from("topics").select("id, subject_id, module_id, title, status, priority, sort_order, notes, source_url, estimated_minutes, archived_at")
       .eq("subject_id", subjectId).eq("user_id", userId)
       .order("sort_order", { ascending: true }).order("created_at", { ascending: true });
   },
 
+  getSubjectModules(supabase: TopicSupabaseClient, userId: string, subjectId: string) {
+    return supabase.from("subject_modules").select("id, title, description, sort_order")
+      .eq("subject_id", subjectId).eq("user_id", userId)
+      .order("sort_order", { ascending: true });
+  },
+
+  getStudyGuides(supabase: TopicSupabaseClient, userId: string, topicIds: string[]) {
+    if (topicIds.length === 0) return Promise.resolve({ data: [], error: null });
+    return supabase.from("topic_study_guides").select("topic_id, content, source_evidence, legacy_notes")
+      .eq("user_id", userId).in("topic_id", topicIds);
+  },
+
   getOpenBlocksForUser(supabase: TopicSupabaseClient, userId: string, topicIds: string[]) {
     if (topicIds.length === 0) return Promise.resolve({ data: [], error: null });
-    return supabase.from("study_blocks").select("topic_id, status").eq("user_id", userId)
+    return supabase.from("study_blocks").select("topic_id, status, planned_date, planned_minutes, sort_order, created_at").eq("user_id", userId)
       .in("topic_id", topicIds).in("status", ["planejado", "em_andamento"]);
   },
 

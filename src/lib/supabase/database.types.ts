@@ -14,6 +14,22 @@ export type Database = {
   }
   public: {
     Tables: {
+      subject_modules: {
+        Row: { id: string; user_id: string; subject_id: string; title: string; sort_order: number; description: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; subject_id: string; title: string; sort_order?: number; description?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; subject_id?: string; title?: string; sort_order?: number; description?: string | null; created_at?: string; updated_at?: string }
+        Relationships: [
+          { foreignKeyName: "subject_modules_subject_id_user_id_fkey"; columns: ["subject_id", "user_id"]; isOneToOne: false; referencedRelation: "subjects"; referencedColumns: ["id", "user_id"] },
+        ]
+      }
+      topic_study_guides: {
+        Row: { topic_id: string; user_id: string; content: Json; source_evidence: Json; legacy_notes: string | null; research_status: string; content_version: number; updated_at: string }
+        Insert: { topic_id: string; user_id: string; content: Json; source_evidence: Json; legacy_notes?: string | null; research_status?: string; content_version?: number; updated_at?: string }
+        Update: { topic_id?: string; user_id?: string; content?: Json; source_evidence?: Json; legacy_notes?: string | null; research_status?: string; content_version?: number; updated_at?: string }
+        Relationships: [
+          { foreignKeyName: "topic_study_guides_topic_id_user_id_fkey"; columns: ["topic_id", "user_id"]; isOneToOne: true; referencedRelation: "topics"; referencedColumns: ["id", "user_id"] },
+        ]
+      }
       exam_targets: {
         Row: { id: string; user_id: string; exam_name: string; institution: string; role_title: string; jurisdiction: string; current_stage: string; priority: string; exam_date: string | null; application_deadline: string | null; official_url: string | null; notes: string | null; archived_at: string | null; created_at: string; updated_at: string }
         Insert: { id?: string; user_id: string; exam_name: string; institution: string; role_title: string; jurisdiction: string; current_stage?: string; priority?: string; exam_date?: string | null; application_deadline?: string | null; official_url?: string | null; notes?: string | null; archived_at?: string | null; created_at?: string; updated_at?: string }
@@ -184,6 +200,7 @@ export type Database = {
           created_at: string
           estimated_minutes: number | null
           id: string
+          module_id: string | null
           notes: string | null
           priority: string
           sort_order: number
@@ -199,6 +216,7 @@ export type Database = {
           created_at?: string
           estimated_minutes?: number | null
           id?: string
+          module_id?: string | null
           notes?: string | null
           priority?: string
           sort_order?: number
@@ -214,6 +232,7 @@ export type Database = {
           created_at?: string
           estimated_minutes?: number | null
           id?: string
+          module_id?: string | null
           notes?: string | null
           priority?: string
           sort_order?: number
@@ -225,6 +244,7 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          { foreignKeyName: "topics_module_owner_subject_fk"; columns: ["module_id", "user_id", "subject_id"]; isOneToOne: false; referencedRelation: "subject_modules"; referencedColumns: ["id", "user_id", "subject_id"] },
           {
             foreignKeyName: "topics_subject_id_user_id_fkey"
             columns: ["subject_id", "user_id"]

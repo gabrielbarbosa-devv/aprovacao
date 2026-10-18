@@ -14,6 +14,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { TopicDetailsSheet } from "@/features/topics/components/topic-details-sheet";
 import { TopicFormDialog } from "@/features/topics/components/topic-form-dialog";
 import { TopicRow } from "@/features/topics/components/topic-row";
+import { SubjectModuleList } from "@/features/topics/components/subject-module-list";
 
 type TopicTab = "ativas" | "arquivadas";
 
@@ -27,7 +28,6 @@ export function SubjectTopicsPage({ data }: { data: SubjectTopicsPageData }) {
   const activeTopics = useMemo(() => data.topics.filter((topic) => topic.archivedAt === null), [data.topics]);
   const archivedTopics = useMemo(() => data.topics.filter((topic) => topic.archivedAt !== null), [data.topics]);
   const visibleTopics = tab === "ativas" ? activeTopics : archivedTopics;
-  const dominatedCount = activeTopics.filter((topic) => topic.status === "dominado").length;
 
   function handleTabKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (!(["ArrowLeft", "ArrowRight", "Home", "End"] as string[]).includes(event.key)) return;
@@ -51,11 +51,14 @@ export function SubjectTopicsPage({ data }: { data: SubjectTopicsPageData }) {
   }
 
   function moveTopic(topic: StudyTopic, direction: -1 | 1) {
-    const currentIndex = activeTopics.findIndex((item) => item.id === topic.id);
+    const siblingTopics = activeTopics.filter((item) => item.moduleId === topic.moduleId);
+    const currentIndex = siblingTopics.findIndex((item) => item.id === topic.id);
     const nextIndex = currentIndex + direction;
-    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= activeTopics.length) return;
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= siblingTopics.length) return;
     const reordered = [...activeTopics];
-    [reordered[currentIndex], reordered[nextIndex]] = [reordered[nextIndex], reordered[currentIndex]];
+    const firstPosition = reordered.findIndex((item) => item.id === siblingTopics[currentIndex]?.id);
+    const secondPosition = reordered.findIndex((item) => item.id === siblingTopics[nextIndex]?.id);
+    [reordered[firstPosition], reordered[secondPosition]] = [reordered[secondPosition], reordered[firstPosition]];
     mutate(() => reorderTopicsAction({ subjectId: data.subject.id, topicIds: reordered.map((item) => item.id) }), "Ordem dos tópicos atualizada.");
   }
 
@@ -76,7 +79,7 @@ export function SubjectTopicsPage({ data }: { data: SubjectTopicsPageData }) {
     <Card className="gap-0 rounded-2xl py-0 shadow-sm shadow-foreground/[0.02]">
       <CardHeader className="flex flex-col gap-4 px-5 pt-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:pt-6">
         <div><CardTitle className="text-base">{tab === "ativas" ? "Conteúdos principais" : "Tópicos arquivados"}</CardTitle><p className="mt-1.5 text-sm text-muted-foreground">{tab === "ativas" ? "Ordene os tópicos conforme seu ciclo de estudos." : "Os tópicos arquivados permanecem disponíveis para consulta e restauração."}</p></div>
-        <Badge variant="secondary" className="self-start tabular-nums sm:self-auto" aria-label={`${dominatedCount} de ${activeTopics.length} tópicos marcados como dominados`}>{dominatedCount} de {activeTopics.length} dominados</Badge>
+        <Badge variant="secondary" className="self-start tabular-nums sm:self-auto">{tab === "ativas" ? `${data.modules.length} módulos · ${activeTopics.length} tópicos` : `${archivedTopics.length} tópicos`}</Badge>
       </CardHeader>
       <CardContent className="px-4 pb-5 pt-4 sm:px-6 sm:pb-6">
         <div role="tablist" aria-label="Tópicos ativos ou arquivados" onKeyDown={handleTabKeyDown} className="mb-4 flex w-fit gap-1 rounded-xl bg-muted/60 p-1">
@@ -84,8 +87,24 @@ export function SubjectTopicsPage({ data }: { data: SubjectTopicsPageData }) {
           <Tab id="arquivadas" label="Arquivados" count={archivedTopics.length} selected={tab === "arquivadas"} onClick={() => setTab("arquivadas")} />
         </div>
         <div id="topics-panel" role="tabpanel" aria-labelledby={`topics-tab-${tab}`} tabIndex={0} className="space-y-2 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-          {visibleTopics.length > 0 ? visibleTopics.map((topic, index) => <TopicRow key={topic.id} topic={topic} activeTopics={activeTopics} index={index}
-            onSelect={setSelectedTopic} onEdit={setEditingTopic}
+          {visibleTopics.length > 0 ? tab === "ativas" && data.modules.length > 0 ? <>
+            <SubjectModuleList modules={data.modules} topics={activeTopics} nextTopicId={data.nextTopicId} actions={{
+              onSelect: setSelectedTopic,
+              onEdit: setEditingTopic,
+              onArchive: (item) => mutate(() => archiveTopicAction({ id: item.id, subjectId: data.subject.id }), "Tópico arquivado."),
+              onRestore: (item) => mutate(() => restoreTopicAction({ id: item.id, subjectId: data.subject.id }), "Tópico restaurado."),
+              onMove: moveTopic,
+            }} />
+            {activeTopics.some((topic) => topic.moduleId === null || !data.modules.some((module) => module.id === topic.moduleId)) ? <section className="mt-4 space-y-2" aria-labelledby="unassigned-topics-heading">
+              <h2 id="unassigned-topics-heading" className="px-1 text-sm font-semibold">Tópicos sem módulo</h2>
+              {activeTopics.filter((topic) => topic.moduleId === null || !data.modules.some((module) => module.id === topic.moduleId)).map((topic, index) => <TopicRow key={topic.id} topic={topic} activeTopics={activeTopics.filter((item) => item.moduleId === topic.moduleId)} index={index} isNext={topic.id === data.nextTopicId}
+                onSelect={setSelectedTopic} onEdit={setEditingTopic}
+                onArchive={(item) => mutate(() => archiveTopicAction({ id: item.id, subjectId: data.subject.id }), "Tópico arquivado.")}
+                onRestore={(item) => mutate(() => restoreTopicAction({ id: item.id, subjectId: data.subject.id }), "Tópico restaurado.")}
+                onMove={moveTopic} />)}
+            </section> : null}
+          </> : visibleTopics.map((topic, index) => <TopicRow key={topic.id} topic={topic} activeTopics={tab === "ativas" ? activeTopics : archivedTopics} index={index}
+            isNext={topic.id === data.nextTopicId} onSelect={setSelectedTopic} onEdit={setEditingTopic}
             onArchive={(item) => mutate(() => archiveTopicAction({ id: item.id, subjectId: data.subject.id }), "Tópico arquivado.")}
             onRestore={(item) => mutate(() => restoreTopicAction({ id: item.id, subjectId: data.subject.id }), "Tópico restaurado.")}
             onMove={moveTopic} />) : <div className="rounded-xl border border-dashed bg-muted/10 px-5 py-10 text-center">

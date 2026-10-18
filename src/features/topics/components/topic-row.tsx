@@ -13,10 +13,11 @@ const statusLabels: Record<StudyTopic["status"], string> = {
 };
 const priorityLabels: Record<StudyTopic["priority"], string> = { alta: "Alta", media: "Média", baixa: "Baixa" };
 
-export function TopicRow({ topic, activeTopics, index, onSelect, onEdit, onArchive, onRestore, onMove }: {
+export function TopicRow({ topic, activeTopics, index, isNext = false, onSelect, onEdit, onArchive, onRestore, onMove }: {
   topic: StudyTopic;
   activeTopics: StudyTopic[];
   index: number;
+  isNext?: boolean;
   onSelect: (topic: StudyTopic) => void;
   onEdit: (topic: StudyTopic) => void;
   onArchive: (topic: StudyTopic) => void;
@@ -25,13 +26,15 @@ export function TopicRow({ topic, activeTopics, index, onSelect, onEdit, onArchi
 }) {
   const [confirmArchive, setConfirmArchive] = useState(false);
   const archived = topic.archivedAt !== null;
-  return <div className="flex min-w-0 items-center gap-1 rounded-xl border bg-background p-2 transition-colors hover:bg-muted/20 sm:gap-2 sm:p-3">
+  return <div className={`flex min-w-0 items-center gap-1 rounded-xl border bg-background p-2 transition-colors hover:bg-muted/20 sm:gap-2 sm:p-3 ${isNext ? "border-primary/30 bg-primary/[0.025]" : ""}`}>
     <Button type="button" variant="ghost" onClick={() => onSelect(topic)} className="h-auto min-h-14 min-w-0 flex-1 justify-start gap-3 rounded-lg px-2 py-2 text-left sm:gap-4 sm:px-2.5" aria-label={`Ver detalhes: ${topic.title}`}>
       <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-lg border text-xs tabular-nums text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
       <span className="min-w-0 flex-1">
         <span className="block break-words text-sm font-semibold leading-5 text-foreground">{topic.title}</span>
         <span className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <span>{statusLabels[topic.status]}</span><span aria-hidden="true">·</span><span>Prioridade {priorityLabels[topic.priority]}</span>
+          {isNext ? <Badge variant="default" className="h-5">Próximo estudo</Badge> : null}
+          {isNext && topic.plannedStudyDate ? <span>Planejado para {formatPlannedDate(topic.plannedStudyDate)}</span> : null}
           {topic.sourceUrl ? <span className="hidden sm:inline">· Material externo adicionado</span> : null}
           {archived ? <Badge variant="secondary" className="h-5">Arquivado</Badge> : null}
         </span>
@@ -71,4 +74,10 @@ export function TopicRow({ topic, activeTopics, index, onSelect, onEdit, onArchi
       </AlertDialogContent>
     </AlertDialog>
   </div>;
+}
+
+function formatPlannedDate(value: string): string {
+  const [year, month, day] = value.split("-");
+  if (!year || !month || !day) return value;
+  return `${day}/${month}/${year}`;
 }
