@@ -3,6 +3,7 @@ import { getStudyDay } from "@/lib/date/study-day";
 import { requireUser } from "@/lib/auth/require-user";
 import type { TodayDashboard } from "@/features/today/domain/types";
 import { getStudySessionHistory } from "@/features/study-sessions/data/get-study-session-history";
+import { getDueReviewSummary } from "@/features/reviews/data/reviews-repository";
 
 const DEFAULT_TIME_ZONE = "America/Sao_Paulo";
 const DEFAULT_DAILY_GOAL_MINUTES = 240;
@@ -26,10 +27,7 @@ export async function getTodayDashboard(): Promise<TodayDashboard> {
 
   const timeZone = settings?.timezone ?? DEFAULT_TIME_ZONE;
   const studyDay = getStudyDay(timeZone);
-  const { count: reviewCount, error: reviewsError } = await supabase.from("review_tasks")
-    .select("id", { count: "exact", head: true }).eq("user_id", user.id)
-    .eq("due_on", studyDay).eq("status", "pending");
-  if (reviewsError) throw new Error("Não foi possível carregar as revisões de hoje.");
+  const reviewSummary = await getDueReviewSummary(supabase, user.id, studyDay);
   const { data: blocks, error: blocksError } = await supabase
     .from("study_blocks")
     .select("id, topic_id, planned_minutes, sort_order, status")
@@ -99,7 +97,8 @@ export async function getTodayDashboard(): Promise<TodayDashboard> {
       }];
     }),
     hasPlan: Boolean(subjects?.length || allBlocks?.length),
-    reviewCount: reviewCount ?? 0,
+    reviewCount: reviewSummary.total,
+    reviewItems: reviewSummary.items,
     topics: (activeTopics ?? []).flatMap((topic) => {
       const subject = (activeSubjects ?? []).find((entry) => entry.id === topic.subject_id)?.name;
       return subject ? [{ id: topic.id, subject, topic: topic.title }] : [];

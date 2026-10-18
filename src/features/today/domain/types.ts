@@ -1,4 +1,5 @@
 import type { StudyTopicOption, StudySessionRecord } from "@/features/study-sessions/domain/types";
+import type { ReviewTask } from "@/features/reviews/domain/types";
 
 export type TodayStudyBlock = {
   id: string;
@@ -18,6 +19,7 @@ export type TodayDashboard = {
   blocks: TodayStudyBlock[];
   hasPlan: boolean;
   reviewCount: number;
+  reviewItems: ReviewTask[];
   topics: StudyTopicOption[];
   history: StudySessionRecord[];
 };

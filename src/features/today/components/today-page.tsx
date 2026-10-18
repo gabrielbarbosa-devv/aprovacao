@@ -86,7 +86,7 @@ export async function TodayPage() {
               <Badge variant="secondary">{dashboard.reviewCount} pendentes</Badge>
             </CardHeader>
             <CardContent className="px-0 pt-1">
-              <ReviewsEmptyState count={dashboard.reviewCount} />
+              <ReviewsEmptyState count={dashboard.reviewCount} items={dashboard.reviewItems} today={dashboard.studyDay} />
             </CardContent>
           </Card>
         </div>
