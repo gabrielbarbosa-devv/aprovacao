@@ -51,7 +51,13 @@ export async function TodayPage() {
               <div>
                 <CardTitle>Estudar hoje</CardTitle>
                 <CardDescription className="mt-2">
-                  {dashboard.blocks.length ? "Seus próximos blocos planejados." : "Blocos de estudo planejados para esta data."}
+                  {dashboard.reviewCount > 0
+                    ? "Comece pelas revisões pendentes; depois siga os blocos abaixo."
+                    : dashboard.blocks.some((block) => block.isRecovery)
+                      ? "Continue o que já estava em andamento e recupere o bloco pendente mais antigo."
+                      : dashboard.blocks.length
+                        ? "Siga a ordem do seu planejamento para hoje."
+                        : "Blocos de estudo planejados para esta data."}
                 </CardDescription>
               </div>
               <CardAction>

@@ -11,6 +11,7 @@ import type { StudyTopicOption } from "@/features/study-sessions/domain/types";
 import type { TodayStudyBlock } from "@/features/today/domain/types";
 import { formatDuration } from "@/features/today/domain/format-duration";
 import { StudyBlockActionButton } from "@/features/today/components/study-block-action-button";
+import { formatStudyDate } from "@/lib/date/study-day";
 
 type StudyBlockDetailsDialogProps = {
   block: TodayStudyBlock;
@@ -43,12 +44,14 @@ export function StudyBlockDetailsDialog({ block, topics, today }: StudyBlockDeta
         <span className="mt-1 block text-sm text-muted-foreground">{block.topic}</span>
         <span className="mt-2 flex flex-wrap items-center gap-2 sm:hidden">
           <Badge variant="secondary">Bloco {String(block.sequence).padStart(2, "0")}</Badge>
+          {block.isRecovery ? <Badge variant="outline">Retomada · {formatStudyDate(block.plannedDate, "short")}</Badge> : null}
           <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Clock3 aria-hidden="true" className="size-3.5" />{formatDuration(block.durationMinutes)}</span>
           {block.status === "em_andamento" ? <Badge className="h-5">Em andamento</Badge> : null}
         </span>
       </span>
       <span className="hidden shrink-0 items-center gap-3 sm:flex">
         <Badge variant="secondary">Bloco {String(block.sequence).padStart(2, "0")}</Badge>
+        {block.isRecovery ? <Badge variant="outline">Retomada · {formatStudyDate(block.plannedDate, "short")}</Badge> : null}
         <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground"><Clock3 aria-hidden="true" className="size-4" />{formatDuration(block.durationMinutes)}</span>
         {block.status === "em_andamento" ? <Badge>Em andamento</Badge> : null}
       </span>
@@ -61,6 +64,7 @@ export function StudyBlockDetailsDialog({ block, topics, today }: StudyBlockDeta
           <p className="text-xs font-semibold uppercase tracking-wide text-primary">Seu próximo bloco</p>
           <DialogTitle className="text-xl leading-snug">{block.topic}</DialogTitle>
           <DialogDescription>{block.subject} · Bloco {String(block.sequence).padStart(2, "0")}</DialogDescription>
+          {block.isRecovery ? <p className="text-xs text-muted-foreground">Bloco pendente desde {formatStudyDate(block.plannedDate, "short")}; sua data original foi preservada.</p> : null}
         </DialogHeader>
 
         <div className="grid gap-3 sm:grid-cols-2">

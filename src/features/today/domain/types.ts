@@ -7,9 +7,11 @@ export type TodayStudyBlock = {
   topicId: string;
   subject: string;
   topic: string;
+  plannedDate: string;
   durationMinutes: number;
   sequence: number;
   status: "planejado" | "em_andamento";
+  isRecovery: boolean;
   sourceUrl: string | null;
   studyGuide: StudyGuide | null;
 };

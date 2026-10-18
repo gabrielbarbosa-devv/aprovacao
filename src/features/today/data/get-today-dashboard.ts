@@ -5,6 +5,7 @@ import type { TodayDashboard } from "@/features/today/domain/types";
 import { getStudySessionHistory } from "@/features/study-sessions/data/get-study-session-history";
 import { getDueReviewSummary } from "@/features/reviews/data/reviews-repository";
 import { parseStudyGuide } from "@/features/topics/domain/study-guide";
+import { orderDailyBlocks } from "@/features/today/domain/order-daily-blocks";
 
 const DEFAULT_TIME_ZONE = "America/Sao_Paulo";
 const DEFAULT_DAILY_GOAL_MINUTES = 240;
@@ -29,16 +30,32 @@ export async function getTodayDashboard(): Promise<TodayDashboard> {
   const timeZone = settings?.timezone ?? DEFAULT_TIME_ZONE;
   const studyDay = getStudyDay(timeZone);
   const reviewSummary = await getDueReviewSummary(supabase, user.id, studyDay);
-  const { data: blocks, error: blocksError } = await supabase
-    .from("study_blocks")
-    .select("id, topic_id, planned_minutes, sort_order, status")
-    .eq("user_id", user.id)
-    .eq("planned_date", studyDay)
-    .in("status", ["planejado", "em_andamento"])
-    .order("sort_order", { ascending: true })
-    .limit(2);
+  const blockColumns = "id, topic_id, planned_date, planned_minutes, sort_order, status";
+  const [activeBlocks, overdueBlocks, plannedForToday] = await Promise.all([
+    supabase.from("study_blocks").select(blockColumns).eq("user_id", user.id)
+      .eq("status", "em_andamento").lte("planned_date", studyDay)
+      .order("planned_date", { ascending: true }).order("sort_order", { ascending: true }).limit(10),
+    supabase.from("study_blocks").select(blockColumns).eq("user_id", user.id)
+      .eq("status", "planejado").lt("planned_date", studyDay)
+      .order("planned_date", { ascending: true }).order("sort_order", { ascending: true }).limit(10),
+    supabase.from("study_blocks").select(blockColumns).eq("user_id", user.id)
+      .eq("status", "planejado").eq("planned_date", studyDay)
+      .order("sort_order", { ascending: true }).limit(10),
+  ]);
 
-  if (blocksError) throw new Error("Não foi possível carregar o planejamento de hoje.");
+  if (activeBlocks.error || overdueBlocks.error || plannedForToday.error) {
+    throw new Error("Não foi possível carregar o planejamento de hoje.");
+  }
+  const blocks = orderDailyBlocks([
+    ...(activeBlocks.data ?? []),
+    ...(overdueBlocks.data ?? []),
+    ...(plannedForToday.data ?? []),
+  ].map((block) => ({
+    ...block,
+    plannedDate: block.planned_date,
+    sortOrder: block.sort_order,
+    status: block.status as "planejado" | "em_andamento",
+  })), studyDay);
 
   const topicIds = (blocks ?? []).map((block) => block.topic_id);
   const { data: topics, error: topicsError } = topicIds.length
@@ -105,9 +122,11 @@ export async function getTodayDashboard(): Promise<TodayDashboard> {
         topicId: block.topic_id,
         subject,
         topic: topic.title,
+        plannedDate: block.planned_date,
         durationMinutes: block.planned_minutes,
         sequence: index + 1,
         status: block.status as "planejado" | "em_andamento",
+        isRecovery: block.planned_date < studyDay,
         sourceUrl: topic.source_url,
         studyGuide: guideByTopicId.get(topic.id) ?? null,
       }];
