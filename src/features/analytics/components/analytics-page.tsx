@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, Clock3, Info } from "lucide-react";
+import { ArrowUpRight, Clock3, Info, Sparkles } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,6 +27,7 @@ export function AnalyticsPage({ data }: { data: AnalyticsPageData }) {
       </header>
 
       <AnalyticsFiltersBar key={`${filters.period}:${filters.from}:${filters.to}:${filters.subjectId ?? "all"}:${filters.sortBy}`} filters={filters} subjects={data.subjects} />
+      <div className="mt-4 flex justify-end"><Button render={<Link href="/planejamento/reforco" />} variant="outline" size="sm"><Sparkles aria-hidden="true" />Ver plano de reforço</Button></div>
       {data.invalidCustomRange ? (
         <Alert className="mt-3 border-amber-500/30 bg-amber-500/5 text-foreground">
           <Info aria-hidden="true" />

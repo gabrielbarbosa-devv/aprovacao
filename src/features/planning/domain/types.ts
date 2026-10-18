@@ -13,6 +13,7 @@ export type PlanningBlock = {
   status: PlanningStatus;
   pinned: boolean;
   sortOrder: number;
+  updatedAt: string;
   studySession: StudySessionRecord | null;
 };
 

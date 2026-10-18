@@ -18,7 +18,7 @@ export async function getPlanningData(requestedWeek?: string): Promise<PlanningD
   const weekStart = getWeekStart(requestedWeek && isStudyDate(requestedWeek) ? requestedWeek : today);
 
   const [{ data: rawBlocks, error: blocksError }, { data: rawTopics, error: topicsError }, { data: rawSubjects, error: subjectsError }] = await Promise.all([
-    supabase.from("study_blocks").select("id, topic_id, planned_date, planned_minutes, planned_start_time, moved_from_date, pinned, sort_order, status")
+    supabase.from("study_blocks").select("id, topic_id, planned_date, planned_minutes, planned_start_time, moved_from_date, pinned, sort_order, status, updated_at")
       .eq("user_id", user.id).order("planned_date", { ascending: true }).order("sort_order", { ascending: true }),
     supabase.from("topics").select("id, subject_id, title, archived_at").eq("user_id", user.id).order("sort_order", { ascending: true }),
     supabase.from("subjects").select("id, name, archived_at").eq("user_id", user.id).order("sort_order", { ascending: true }),
@@ -72,6 +72,7 @@ export async function getPlanningData(requestedWeek?: string): Promise<PlanningD
       status: block.status as PlanningBlock["status"],
       pinned: block.pinned,
       sortOrder: block.sort_order,
+      updatedAt: block.updated_at,
       studySession: sessionByBlock.get(block.id) ?? null,
     }];
   });

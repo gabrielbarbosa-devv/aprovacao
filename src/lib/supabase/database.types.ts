@@ -38,6 +38,12 @@ export type Database = {
           { foreignKeyName: "exam_topics_topic_id_user_id_fkey"; columns: ["topic_id", "user_id"]; isOneToOne: false; referencedRelation: "topics"; referencedColumns: ["id", "user_id"] },
         ]
       }
+      reinforcement_plan_events: {
+        Row: { id: string; user_id: string; revision_id: string; preview_hash: string; change_set: Json; applied_at: string }
+        Insert: { id?: string; user_id: string; revision_id: string; preview_hash: string; change_set: Json; applied_at?: string }
+        Update: never
+        Relationships: []
+      }
       question_batches: {
         Row: { id: string; user_id: string; operation_key: string; studied_on: string; subject_id: string; topic_id: string | null; source_type: string; source_label: string; exam_target_id: string | null; study_session_id: string | null; question_count: number; correct_count: number; duration_minutes: number | null; notes: string | null; replaces_session_totals: boolean; deleted_at: string | null; created_at: string; updated_at: string }
         Insert: { id?: string; user_id: string; operation_key: string; studied_on: string; subject_id: string; topic_id?: string | null; source_type: string; source_label: string; exam_target_id?: string | null; study_session_id?: string | null; question_count: number; correct_count: number; duration_minutes?: number | null; notes?: string | null; replaces_session_totals?: boolean; deleted_at?: string | null; created_at?: string; updated_at?: string }
@@ -292,6 +298,10 @@ export type Database = {
       }
       apply_schedule_reorganization: {
         Args: { p_changes: Json; p_expected: Json }
+        Returns: string
+      }
+      apply_reinforcement_plan: {
+        Args: { p_revision_id: string; p_expected: Json; p_changes: Json }
         Returns: string
       }
       create_planned_study_block: {

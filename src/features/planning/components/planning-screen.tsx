@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, CalendarDays, Clock3, Info, Pin } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Clock3, Info, Pin, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -74,6 +74,7 @@ export function PlanningScreen({ data }: { data: PlanningData }) {
             <p className="mt-2 text-sm text-muted-foreground">Organize o que estudar, sem precisar refazer tudo quando a rotina mudar.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2 xl:pt-1">
+            <Button render={<Link href="/planejamento/reforco" />} variant="outline"><Sparkles aria-hidden="true" />Reforçar</Button>
             <Link href={`?week=${currentWeekStart}`} aria-label="Ir para a semana atual" className="inline-flex h-9 items-center rounded-lg border bg-background px-3 text-sm font-medium hover:bg-muted">Hoje</Link>
             <AddBlockDialog topics={data.topics} initialDate={selectedDate} />
           </div>

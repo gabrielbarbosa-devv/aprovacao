@@ -4,7 +4,7 @@ import type { PlanningBlock } from "./types";
 
 const block = (id: string, date: string, minutes = 120, status: PlanningBlock["status"] = "planejado", pinned = false): PlanningBlock => ({
   id, topicId: "topic", subject: "Português", topic: "Interpretação", plannedDate: date,
-  plannedMinutes: minutes, plannedStartTime: null, status, pinned, sortOrder: 0, studySession: null,
+  plannedMinutes: minutes, plannedStartTime: null, status, pinned, sortOrder: 0, updatedAt: "2026-10-17T12:00:00Z", studySession: null,
 });
 
 describe("previewReorganization", () => {
