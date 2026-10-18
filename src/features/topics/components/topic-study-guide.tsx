@@ -4,7 +4,7 @@ import type { StudyGuide } from "@/features/topics/domain/types";
 export function TopicStudyGuide({ guide, mode = "complete" }: { guide: StudyGuide | null; mode?: "complete" | "session" }) {
   const sessionMode = mode === "session";
   if (!guide) return <section className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
-    O guia didático ainda não está disponível para este tópico. As notas pessoais seguem preservadas abaixo.
+    O guia de estudo ainda não foi cadastrado para este tópico.
   </section>;
 
   return <div className="space-y-5">
