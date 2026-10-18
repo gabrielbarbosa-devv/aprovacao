@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatDuration } from "@/features/today/domain/format-duration";
 import type { TodayStudyBlock } from "@/features/today/domain/types";
-import { StartStudyBlockButton } from "@/features/today/components/start-study-block-button";
+import { StudyBlockActionButton } from "@/features/today/components/study-block-action-button";
 import { StudySessionDialog } from "@/features/study-sessions/components/study-session-dialog";
 import type { StudyTopicOption } from "@/features/study-sessions/domain/types";
 
@@ -24,8 +24,11 @@ export function StudyBlockCard({ block, topics, today }: { block: TodayStudyBloc
             <Clock3 aria-hidden="true" className="size-4" />{formatDuration(block.durationMinutes)}
           </span>
           {block.status === "em_andamento" ? (
-            <Badge className="bg-primary/10 text-primary hover:bg-primary/10">Em andamento</Badge>
-          ) : <StartStudyBlockButton blockId={block.id} />}
+            <>
+              <Badge className="bg-primary/10 text-primary hover:bg-primary/10">Em andamento</Badge>
+              <StudyBlockActionButton blockId={block.id} action="pause" />
+            </>
+          ) : <StudyBlockActionButton blockId={block.id} action="start" />}
           <StudySessionDialog topics={topics} today={today} selectedBlock={{ id: block.id, topicId: block.topicId, subject: block.subject, topic: block.topic, durationMinutes: block.durationMinutes }} />
         </div>
       </CardContent>

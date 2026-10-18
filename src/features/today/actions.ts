@@ -68,6 +68,27 @@ export async function startStudyBlockAction(
   revalidatePath("/");
   return {
     status: "success",
-    message: data === "started" ? "Estudo iniciado." : "Este bloco já está em andamento.",
+    message: data === "started" ? "Estudo iniciado ou retomado." : "Este bloco já está em andamento.",
   };
+}
+
+export async function pauseStudyBlockAction(
+  _previous: ActionResult = idleResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  void _previous;
+  const parsed = startBlockSchema.safeParse({ blockId: formData.get("blockId") });
+  if (!parsed.success) return { status: "error", message: "Bloco inválido." };
+
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase.rpc("pause_study_block", {
+    p_block_id: parsed.data.blockId,
+  });
+
+  if (error) return { status: "error", message: "Não foi possível pausar o estudo." };
+  if (data === "not_found") return { status: "error", message: "Este bloco não foi encontrado." };
+  if (data === "invalid_state") return { status: "error", message: "Este bloco não está em andamento." };
+
+  revalidatePath("/");
+  return { status: "success", message: data === "paused" ? "Estudo pausado. Você pode retomá-lo quando quiser." : "Este bloco já está planejado." };
 }

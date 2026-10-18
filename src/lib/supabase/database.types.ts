@@ -340,6 +340,7 @@ export type Database = {
         Returns: string
       }
       start_study_block: { Args: { p_block_id: string }; Returns: string }
+      pause_study_block: { Args: { p_block_id: string }; Returns: string }
       update_planned_study_block: {
         Args: {
           p_id: string
