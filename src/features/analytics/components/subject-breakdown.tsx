@@ -39,7 +39,7 @@ export function SubjectBreakdown({ data, filters, hasQuestionHistory }: SubjectB
             })}
           </div>
         ) : (
-          <div className="grid min-h-[230px] place-items-center rounded-lg border border-dashed px-5 text-center">
+          <div className="grid min-h-36 place-items-center rounded-lg border border-dashed px-5 py-5 text-center">
             <div className="grid max-w-sm gap-2">
               <p className="font-medium">{hasQuestionHistory ? "Nenhuma matéria neste filtro" : "Sem desempenho por matéria"}</p>
               <p className="text-sm text-muted-foreground">{hasQuestionHistory ? "Experimente outro período ou remova o filtro de matéria." : "Os resultados aparecem depois dos primeiros registros de questões."}</p>

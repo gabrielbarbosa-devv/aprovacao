@@ -57,7 +57,7 @@ export function AccuracyTrendChart({ data, hasQuestionHistory }: AccuracyTrendCh
             </ul>
           </>
         ) : (
-          <div className="grid min-h-[230px] place-items-center rounded-lg border border-dashed px-5 text-center">
+          <div className="grid min-h-36 place-items-center rounded-lg border border-dashed px-5 py-5 text-center">
             <div className="grid max-w-sm gap-2">
               <p className="font-medium">{hasQuestionHistory ? "Sem questões neste filtro" : "Ainda não há evolução para exibir"}</p>
               <p className="text-sm text-muted-foreground">
