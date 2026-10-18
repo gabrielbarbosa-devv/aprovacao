@@ -48,10 +48,11 @@ Aplicadas no Supabase e registradas como aplicadas:
 2. `20261019130000_notification_scheduler_extensions.sql`
 3. `20261019140000_notification_push_delivery_log.sql`
 4. `20261019150000_notification_push_quiet_hours.sql`
+5. `20261019160000_notification_push_timezone_fallback.sql`
 
 Extensões habilitadas: `pg_cron 1.6.4`, `pg_net 0.20.4`; Vault já estava habilitado (`0.3.1`). O job único `process-study-notifications` está ativo em `*/5 * * * *`. A Edge Function `process-study-notifications` está ativa. A chave pública VAPID foi configurada no ambiente Production da Vercel; a privada e o token do job estão somente em Supabase Secrets.
 
-O histórico remoto tinha a versão anterior `20261018042957` sem arquivo correspondente local. Não foi reparada nem removida. `supabase db push --dry-run` não conseguiu autenticar no Postgres porque não havia `SUPABASE_DB_PASSWORD`; as migrations novas foram aplicadas pelo canal Management API `supabase db query --linked --file`, cada uma em transação SQL, e somente seus quatro IDs foram marcados aplicados. O restante do histórico não foi alterado.
+O histórico remoto tinha a versão anterior `20261018042957` sem arquivo correspondente local. Não foi reparada nem removida. `supabase db push --dry-run` não conseguiu autenticar no Postgres porque não havia `SUPABASE_DB_PASSWORD`; as migrations novas foram aplicadas pelo canal Management API `supabase db query --linked --file`, cada uma em transação SQL, e somente seus cinco IDs foram marcados aplicados. O restante do histórico não foi alterado.
 
 ## Arquivos alterados/criados
 
@@ -73,7 +74,7 @@ O histórico remoto tinha a versão anterior `20261018042957` sem arquivo corres
 - `public/sw.js`
 - `supabase/config.toml`
 - `supabase/functions/process-study-notifications/index.ts`
-- Quatro migrations listadas acima.
+- Cinco migrations listadas acima.
 - Este relatório.
 
 ## Verificação
@@ -87,9 +88,11 @@ Comandos finais executados:
 - `supabase functions deploy process-study-notifications --project-ref mnupjnlbsjsclxwlduon --use-api` — função ativa.
 - Teste HTTP do job: sem segredo `401`; com segredo `200`, `{"processed":true,"claimed":0,"sent":0}`.
 - Consulta do agendamento: um job ativo a cada cinco minutos.
+- O log do Supabase registrou uma execução bem-sucedida do job.
 - Consulta autenticada de contagens antes/depois: histórico inalterado e zero notificações/inscrições.
+- Inspeção manual autenticada em produção: Configurações mostra as preferências desativadas por padrão; o sino mostra o estado vazio real.
 
-Não foi criado fixture nem feito teste de inscrição Push real: isso pediria permissão ao navegador e criaria um dispositivo autorizado. As políticas e privilégios RLS foram inspecionados no banco; não havia uma segunda identidade autenticada disponível para um teste ponta a ponta de acesso entre contas. A UI precisa de validação autenticada no navegador e envio real depende de o usuário optar pelo Push.
+Não foi criado fixture nem feito teste de inscrição Push real: isso pediria permissão ao navegador e criaria um dispositivo autorizado. As políticas e privilégios RLS foram inspecionados no banco; não havia uma segunda identidade autenticada disponível para um teste ponta a ponta de acesso entre contas. O envio real depende de o usuário optar pelo Push.
 
 ## Uso
 
