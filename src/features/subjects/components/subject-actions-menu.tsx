@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 import { Menu } from "@base-ui/react/menu";
-import { Archive, Ellipsis, Pencil, RotateCcw, Trash2 } from "lucide-react";
+import { Archive, ArrowDown, ArrowUp, Ellipsis, Pencil, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { archiveSubjectAction, deleteEmptySubjectAction, restoreSubjectAction } from "@/features/subjects/actions";
+import { archiveSubjectAction, deleteEmptySubjectAction, reorderSubjectsAction, restoreSubjectAction } from "@/features/subjects/actions";
 import type { Subject, SubjectActionResult } from "@/features/subjects/domain/types";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { SubjectFormDialog } from "@/features/subjects/components/subject-form-dialog";
 
-export function SubjectActionsMenu({ subject }: { subject: Subject }) {
+export function SubjectActionsMenu({ subject, activeSubjectIds, activeIndex }: { subject: Subject; activeSubjectIds?: string[]; activeIndex: number }) {
   const [editing, setEditing] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -41,6 +41,15 @@ export function SubjectActionsMenu({ subject }: { subject: Subject }) {
     if (await run(() => deleteEmptySubjectAction(subject.id), "Matéria excluída.")) setConfirmDelete(false);
   }
 
+  async function move(offset: -1 | 1) {
+    if (!activeSubjectIds) return;
+    const nextIndex = activeIndex + offset;
+    if (nextIndex < 0 || nextIndex >= activeSubjectIds.length) return;
+    const nextIds = [...activeSubjectIds];
+    [nextIds[activeIndex], nextIds[nextIndex]] = [nextIds[nextIndex], nextIds[activeIndex]];
+    await run(() => reorderSubjectsAction(nextIds), "Ordem das matérias atualizada.");
+  }
+
   return <>
     {archived ? <Button type="button" variant="outline" size="sm" className="shrink-0 gap-2" onClick={restore}><RotateCcw aria-hidden="true" className="size-3.5" /><span className="hidden sm:inline">Restaurar</span><span className="sr-only sm:hidden">Restaurar {subject.name}</span></Button> : <Menu.Root>
       <Menu.Trigger render={<Button type="button" variant="ghost" size="icon" aria-label={`Ações de ${subject.name}`} />}><Ellipsis aria-hidden="true" /></Menu.Trigger>
@@ -48,6 +57,8 @@ export function SubjectActionsMenu({ subject }: { subject: Subject }) {
         <Menu.Positioner sideOffset={6} align="end" className="z-50 outline-none">
           <Menu.Popup className="min-w-48 rounded-xl border bg-popover p-1.5 text-popover-foreground shadow-md outline-none">
             <Menu.Item onClick={() => setEditing(true)} className="flex h-9 cursor-default items-center gap-2 rounded-lg px-2.5 text-sm outline-none data-highlighted:bg-muted"><Pencil aria-hidden="true" className="size-4" />Editar</Menu.Item>
+            <Menu.Item disabled={!activeSubjectIds || activeIndex === 0} onClick={() => void move(-1)} className="flex h-9 cursor-default items-center gap-2 rounded-lg px-2.5 text-sm outline-none data-highlighted:bg-muted data-disabled:cursor-not-allowed data-disabled:opacity-50"><ArrowUp aria-hidden="true" className="size-4" />Mover para cima</Menu.Item>
+            <Menu.Item disabled={!activeSubjectIds || activeIndex >= (activeSubjectIds.length - 1)} onClick={() => void move(1)} className="flex h-9 cursor-default items-center gap-2 rounded-lg px-2.5 text-sm outline-none data-highlighted:bg-muted data-disabled:cursor-not-allowed data-disabled:opacity-50"><ArrowDown aria-hidden="true" className="size-4" />Mover para baixo</Menu.Item>
             <Menu.Item onClick={() => setConfirmArchive(true)} className="flex h-9 cursor-default items-center gap-2 rounded-lg px-2.5 text-sm outline-none data-highlighted:bg-muted"><Archive aria-hidden="true" className="size-4" />Arquivar</Menu.Item>
             <Menu.Separator className="my-1 h-px bg-border" />
             <Menu.Item disabled={subject.topics.length > 0} onClick={() => setConfirmDelete(true)} className="flex h-9 cursor-default items-center gap-2 rounded-lg px-2.5 text-sm text-destructive outline-none data-highlighted:bg-destructive/10 data-disabled:cursor-not-allowed data-disabled:opacity-50"><Trash2 aria-hidden="true" className="size-4" />Excluir matéria</Menu.Item>

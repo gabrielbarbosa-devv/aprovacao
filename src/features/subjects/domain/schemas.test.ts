@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createSubjectSchema, subjectNameSchema } from "./schemas";
+import { createSubjectSchema, reorderSubjectsSchema, subjectNameSchema } from "./schemas";
 
 describe("subject schemas", () => {
   it("normalizes spacing before the subject is persisted", () => {
@@ -13,5 +13,11 @@ describe("subject schemas", () => {
 
   it("accepts a valid subject and an optional color", () => {
     expect(createSubjectSchema.parse({ name: " Português ", colorToken: null })).toEqual({ name: "Português", colorToken: null });
+  });
+
+  it("accepts a non-empty reorder list and rejects duplicate IDs", () => {
+    const id = "123e4567-e89b-42d3-a456-426614174000";
+    expect(reorderSubjectsSchema.safeParse([id]).success).toBe(true);
+    expect(reorderSubjectsSchema.safeParse([id, id]).success).toBe(false);
   });
 });

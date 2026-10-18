@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/require-user";
-import { archiveSubjectSchema, createSubjectSchema, subjectIdSchema, updateSubjectSchema } from "@/features/subjects/domain/schemas";
+import { archiveSubjectSchema, createSubjectSchema, reorderSubjectsSchema, subjectIdSchema, updateSubjectSchema } from "@/features/subjects/domain/schemas";
 import type { SubjectActionResult } from "@/features/subjects/domain/types";
 
 export async function createSubjectAction(input: unknown): Promise<SubjectActionResult> {
@@ -75,6 +75,17 @@ export async function restoreSubjectAction(input: unknown): Promise<SubjectActio
   revalidateSubjects();
   revalidatePath("/planejamento");
   revalidatePath("/");
+  return { ok: true };
+}
+
+export async function reorderSubjectsAction(input: unknown): Promise<SubjectActionResult> {
+  const parsed = reorderSubjectsSchema.safeParse(input);
+  if (!parsed.success) return invalidResult(parsed.error.issues[0]?.message);
+  if (new Set(parsed.data).size !== parsed.data.length) return { ok: false, message: "A lista de matérias contém itens repetidos. Atualize a página e tente novamente." };
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase.rpc("reorder_subjects", { p_subject_ids: parsed.data });
+  if (error || data !== "reordered") return { ok: false, message: "A lista de matérias mudou. Atualize a página e tente novamente." };
+  revalidateSubjects();
   return { ok: true };
 }
 

@@ -183,6 +183,10 @@ export type Database = {
         Args: { p_expected_future_blocks: number; p_subject_id: string }
         Returns: string
       }
+      reorder_subjects: {
+        Args: { p_subject_ids: string[] }
+        Returns: string
+      }
       apply_schedule_reorganization: {
         Args: { p_changes: Json; p_expected: Json }
         Returns: string

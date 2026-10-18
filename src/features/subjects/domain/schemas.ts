@@ -24,4 +24,11 @@ export const archiveSubjectSchema = z.object({
   expectedFutureBlocks: z.number().int().nonnegative(),
 });
 
+export const reorderSubjectsSchema = z.array(z.string().uuid("Matéria inválida."))
+  .min(1, "Não há matérias para reordenar.")
+  .max(500, "O limite de matérias para reordenar foi excedido.")
+  .superRefine((ids, context) => {
+    if (new Set(ids).size !== ids.length) context.addIssue({ code: "custom", message: "A lista contém matérias repetidas." });
+  });
+
 export type SubjectInput = z.infer<typeof createSubjectSchema>;

@@ -50,7 +50,7 @@ export function SubjectsPage({ subjects }: { subjects: Subject[] }) {
         </div>
 
         <div id="subjects-panel" role="tabpanel" aria-labelledby={`subjects-tab-${tab}`} tabIndex={0} className="space-y-2 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-          {visibleSubjects.length > 0 ? visibleSubjects.map((subject) => <SubjectRow key={subject.id} subject={subject} />) : <div className="rounded-xl border border-dashed bg-muted/10 px-5 py-10 text-center">
+          {visibleSubjects.length > 0 ? visibleSubjects.map((subject, index) => <SubjectRow key={subject.id} subject={subject} activeSubjectIds={tab === "ativas" ? activeSubjects.map((activeSubject) => activeSubject.id) : undefined} activeIndex={index} />) : <div className="rounded-xl border border-dashed bg-muted/10 px-5 py-10 text-center">
             <span className="mx-auto grid size-11 place-items-center rounded-xl bg-secondary text-muted-foreground">{tab === "ativas" ? <BookOpen aria-hidden="true" className="size-5" /> : <Archive aria-hidden="true" className="size-5" />}</span>
             <h2 className="mt-3 text-sm font-semibold">{tab === "ativas" ? "Nenhuma matéria cadastrada" : "Nenhuma matéria arquivada"}</h2>
             <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">{tab === "ativas" ? "Adicione uma matéria para começar a organizar seus tópicos de estudo." : "Quando você arquivar uma matéria, ela ficará disponível aqui para ser restaurada."}</p>

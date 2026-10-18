@@ -16,7 +16,7 @@ const colorClasses: Record<NonNullable<Subject["colorToken"]>, string> = {
   rose: "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300",
 };
 
-export function SubjectRow({ subject }: { subject: Subject }) {
+export function SubjectRow({ subject, activeSubjectIds, activeIndex }: { subject: Subject; activeSubjectIds?: string[]; activeIndex: number }) {
   const count = subject.topics.length;
   const notStartedCount = subject.topics.filter((topic) => topic.status === "nao_iniciado").length;
   const inProgressCount = subject.topics.filter((topic) => topic.status === "em_andamento").length;
@@ -30,7 +30,7 @@ export function SubjectRow({ subject }: { subject: Subject }) {
 
   return <div className="flex items-center gap-2 rounded-xl border bg-background p-2 transition-colors hover:bg-muted/20 sm:p-3">
     <SubjectDetailTrigger subject={subject} colorClass={colorClass} count={count} statusLabel={statusLabel} archived={archived} />
-    <SubjectActionsMenu subject={subject} />
+    <SubjectActionsMenu subject={subject} activeSubjectIds={activeSubjectIds} activeIndex={activeIndex} />
   </div>;
 }
 
