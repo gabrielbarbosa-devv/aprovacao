@@ -227,13 +227,13 @@ async function enrichTopics(client: Client, userId: string, topicIds: string[]) 
   return new Map((topics ?? []).map((row) => [row.id, { subject: names.get(row.subject_id) ?? null, topic: row.title }]));
 }
 
-function toolResult(value: unknown) {
+export function toolResult(value: unknown) {
   const text = JSON.stringify(value);
   if (text.length > 48_000) return toolError("O resultado excede o limite de tamanho. Reduza a janela ou solicite menos itens.");
   return { content: [{ type: "text" as const, text }] };
 }
 
-function toolError(message: string) {
+export function toolError(message: string) {
   return { isError: true, content: [{ type: "text" as const, text: message }] };
 }
 

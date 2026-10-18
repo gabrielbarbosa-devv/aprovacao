@@ -5,6 +5,7 @@ import { pipeline } from "npm:@supabase/middleware@1.0.0";
 import { withOAuthProtectedResource, withSupabase } from "npm:@supabase/server@1.9.2";
 import type { Database } from "../../../src/lib/supabase/database.types.ts";
 import { registerReadTools } from "./tools.ts";
+import { registerWriteTools } from "./write-tools.ts";
 
 const middleware = [
   withOAuthProtectedResource(),
@@ -21,6 +22,7 @@ Deno.serve(
     const handler = createMcpHandler(() => {
       const server = new McpServer({ name: "operacao-aprovacao", version: "0.2.0" });
       registerReadTools(server, supabase, data.user.id);
+      registerWriteTools(server, supabase, data.user.id);
       return server;
     });
 
