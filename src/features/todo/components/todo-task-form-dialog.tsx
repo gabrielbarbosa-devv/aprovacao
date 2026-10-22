@@ -31,6 +31,9 @@ export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, init
   const [dueOn, setDueOn] = useState("");
   const [dueTime, setDueTime] = useState("");
   const [saving, setSaving] = useState(false);
+  const listItems = lists.map((list) => ({ value: list.id, label: list.name }));
+  const workspaceItems = [{ value: "none", label: "Sem workspace" }, ...workspaces.map((workspace) => ({ value: workspace.id, label: workspace.name }))];
+  const priorityItems = [{ value: "low", label: "Baixa" }, { value: "medium", label: "Média" }, { value: "high", label: "Alta" }] as const;
 
   const reset = () => {
     setTitle(""); setDescription(""); setWorkspaceId("none"); setPriority("medium"); setDueOn(""); setDueTime("");
@@ -84,21 +87,21 @@ export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, init
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Lista</Label>
-              <Select value={listId || lists[0]?.id || ""} onValueChange={(value) => setListId(value ?? "")}>
+              <Select items={listItems} value={listId || lists[0]?.id || ""} onValueChange={(value) => setListId(value ?? "")}>
                 <SelectTrigger className="w-full"><SelectValue placeholder="Selecione uma lista" /></SelectTrigger>
                 <SelectContent>{lists.map((list) => <SelectItem key={list.id} value={list.id}>{list.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label>Workspace <span className="font-normal text-muted-foreground">(opcional)</span></Label>
-              <Select value={workspaceId} onValueChange={(value) => setWorkspaceId(value ?? "none")}>
+              <Select items={workspaceItems} value={workspaceId} onValueChange={(value) => setWorkspaceId(value ?? "none")}>
                 <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="none">Sem workspace</SelectItem>{workspaces.map((workspace) => <SelectItem key={workspace.id} value={workspace.id}>{workspace.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label>Prioridade</Label>
-              <Select value={priority} onValueChange={(value) => { if (value === "low" || value === "medium" || value === "high") setPriority(value); }}>
+              <Select items={priorityItems} value={priority} onValueChange={(value) => { if (value === "low" || value === "medium" || value === "high") setPriority(value); }}>
                 <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="low">Baixa</SelectItem><SelectItem value="medium">Média</SelectItem><SelectItem value="high">Alta</SelectItem></SelectContent>
               </Select>
