@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { BriefcaseBusiness, CalendarDays, Check, CheckCircle2, Circle, Clock3, ListTodo, LoaderCircle, MoreHorizontal, Pencil, Plus, RefreshCw, Tags, Trash2, UserRound } from "lucide-react";
+import { AlertCircle, BriefcaseBusiness, CalendarDays, Check, CheckCircle2, Circle, Clock3, ListTodo, LoaderCircle, MoreHorizontal, Pencil, Plus, RefreshCw, Search, Tags, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { todoLabelAction, todoListAction, todoTaskAction, todoTaskLabelAction } from "@/features/todo/actions";
 import { TodoTaskFormDialog } from "@/features/todo/components/todo-task-form-dialog";
 import { TodoTaskDetailsSheet } from "@/features/todo/components/todo-task-details-sheet";
-import { countLabelUsage, splitListTasks } from "@/features/todo/domain/list-page";
+import { countLabelUsage, splitListTasks, splitWorkListTasks } from "@/features/todo/domain/list-page";
 import { localDateKey, taskDueDateKey } from "@/features/todo/domain/dashboard";
 import { useTodoDashboardData } from "@/features/todo/hooks/todo-dashboard-context";
 import { useTodoLabels, useTodoLabelsForTasks, useTodoTasks } from "@/features/todo/hooks/use-todo-data";
@@ -70,6 +70,8 @@ export function TodoListPage({ listId }: { listId: string }) {
   const [transferTargetId, setTransferTargetId] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [dueFilter, setDueFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("due");
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setToday(localDateKey(new Date())));
@@ -78,20 +80,43 @@ export function TodoListPage({ listId }: { listId: string }) {
   const list = lists.find((item) => item.id === listId) ?? null;
   const storedTaskCount = (storedTasksResource.data ?? []).length;
   const activeTask = listTasks.find((task) => task.id === taskId) ?? null;
+  const isWorkList = list?.slug === "trabalho";
   const partitions = useMemo(() => today ? splitListTasks(listTasks, today) : { pending: [], completed: [], upcoming: [] }, [listTasks, today]);
+  const workPartitions = useMemo(() => today ? splitWorkListTasks(listTasks, today) : { pending: [], completed: [], overdue: [], highPriority: [], inProgress: [], other: [], upcoming: [] }, [listTasks, today]);
   const labelRows = labelsResource.data ?? noLabels;
   const labelLinks = labelLinksResource.data ?? noLabelLinks;
   const usage = useMemo(() => countLabelUsage(listTasks.map((task) => task.id), labelLinks), [listTasks, labelLinks]);
   const popularLabels = useMemo(() => labelRows.filter((label) => usage.has(label.id)).sort((a, b) => (usage.get(b.id) ?? 0) - (usage.get(a.id) ?? 0)).slice(0, 5), [labelRows, usage]);
   const progress = listTasks.length ? Math.round((partitions.completed.length / listTasks.length) * 100) : 0;
-  const visiblePending = partitions.pending.filter((task) => {
+  const filteredTasks = listTasks.filter((task) => {
+    const query = search.trim().toLocaleLowerCase("pt-BR");
+    if (query && !`${task.title} ${task.description ?? ""}`.toLocaleLowerCase("pt-BR").includes(query)) return false;
     if (priorityFilter !== "all" && task.priority !== priorityFilter) return false;
-    if (dueFilter === "upcoming" && !(task.due_on && today && task.due_on > today)) return false;
+    if (dueFilter === "upcoming" && !(task.due_on && today && task.due_on >= today)) return false;
     if (dueFilter === "overdue" && !(task.due_on && today && task.due_on < today)) return false;
     if (dueFilter === "none" && task.due_on !== null) return false;
     return true;
   });
-  const upcoming = partitions.upcoming.toSorted((a, b) => (taskDueDateKey(a) ?? "").localeCompare(taskDueDateKey(b) ?? "")).slice(0, 4);
+  const sortedTasks = filteredTasks.toSorted((a, b) => {
+    if (sortBy === "priority") return priorities.findIndex((item) => item.value === a.priority) - priorities.findIndex((item) => item.value === b.priority);
+    if (sortBy === "created") return b.created_at.localeCompare(a.created_at);
+    return (taskDueDateKey(a) ?? "9999-12-31").localeCompare(taskDueDateKey(b) ?? "9999-12-31");
+  });
+  const visiblePending = sortedTasks.filter((task) => task.status !== "done");
+  const workVisible = isWorkList && today ? splitWorkListTasks(sortedTasks, today) : null;
+  const upcoming = (isWorkList ? workPartitions.upcoming : partitions.upcoming).slice(0, 4);
+  const associatedWorkspaces = workspaces.map((workspace) => ({
+    workspace,
+    tasks: listTasks.filter((task) => task.workspace_id === workspace.id),
+  })).filter(({ tasks }) => tasks.length > 0);
+
+  function renderTaskRows(rows: TodoTask[]) {
+    return <div className="divide-y">{rows.map((task) => <TaskRow key={task.id} task={task} lists={lists} labels={labelRows} taskLabelIds={labelLinks.filter((link) => link.task_id === task.id).map((link) => link.label_id)} saving={saving.has(task.id)} onOpen={() => setTaskId(task.id)} onEdit={() => { setEditingTask(task); setFormOpen(true); }} onToggle={() => void mutateTask(task, { status: task.status === "done" ? "todo" : "done" })} onStatus={(status) => void mutateTask(task, { status })} onPriority={(priority) => void mutateTask(task, { priority })} onMove={(targetListId) => void mutateTask(task, { listId: targetListId })} onLabel={(label, checked) => void toggleLabel(task, label, checked)} />)}</div>;
+  }
+
+  function renderTaskSection(title: string, rows: TodoTask[], emptyMessage: string) {
+    return <TaskSection title={title} count={rows.length}>{rows.length ? renderTaskRows(rows) : <p className="px-4 py-8 text-center text-sm text-muted-foreground">{emptyMessage}</p>}</TaskSection>;
+  }
 
   async function reloadLabels() {
     await Promise.all([labelsResource.refresh(), labelLinksResource.refresh()]);
@@ -102,7 +127,7 @@ export function TodoListPage({ listId }: { listId: string }) {
     try {
       const result = await todoTaskAction({ operation: "update", id: task.id, ...fields });
       if (!result.ok) { toast.error(result.message); return; }
-      toast.success(fields.listId ? "Tarefa movida para outra lista." : fields.status === "done" ? "Tarefa concluída." : fields.status ? "Tarefa reaberta." : "Prioridade atualizada.");
+      toast.success(fields.listId ? "Tarefa movida para outra lista." : fields.status === "done" ? "Tarefa concluída." : fields.status === "in_progress" ? "Tarefa marcada como em andamento." : fields.status ? "Tarefa reaberta." : "Prioridade atualizada.");
       if (fields.status === "done") setTaskId(null);
       await refreshAll();
     } catch { toast.error("Não foi possível atualizar a tarefa."); }
@@ -165,7 +190,7 @@ export function TodoListPage({ listId }: { listId: string }) {
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex min-w-0 items-center gap-3">
             <Avatar className="size-12 rounded-2xl"><AvatarFallback className={cn("rounded-2xl", list.color === "violet" ? "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300" : list.color === "green" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : list.color === "orange" ? "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300" : list.color === "rose" ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300" : list.color === "slate" ? "bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300" : "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300")}>{listIcon(list)}</AvatarFallback></Avatar>
-            <div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wider text-primary">Tarefas / {list.name}</p><h1 className="mt-1 truncate text-2xl font-bold tracking-tight sm:text-3xl">{list.slug === "pessoal" && list.name === "Pessoal" ? "Minha vida pessoal" : list.name}</h1><p className="mt-1 text-sm text-muted-foreground">{list.slug === "pessoal" && list.name === "Pessoal" ? "Tudo que importa fora do trabalho, em um só lugar." : "Tarefas organizadas nesta lista."}</p></div>
+            <div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wider text-primary">Tarefas / {list.name}</p><h1 className="mt-1 truncate text-2xl font-bold tracking-tight sm:text-3xl">{list.slug === "pessoal" && list.name === "Pessoal" ? "Minha vida pessoal" : list.name}</h1><p className="mt-1 text-sm text-muted-foreground">{list.slug === "pessoal" && list.name === "Pessoal" ? "Tudo que importa fora do trabalho, em um só lugar." : list.slug === "trabalho" && list.name === "Trabalho" ? "Organize suas entregas e mantenha os prazos sob controle." : "Tarefas organizadas nesta lista."}</p></div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <Button onClick={() => { setEditingTask(null); setFormOpen(true); }}><Plus aria-hidden="true" /> Nova tarefa</Button>
@@ -176,31 +201,42 @@ export function TodoListPage({ listId }: { listId: string }) {
         <section className="grid gap-3 sm:grid-cols-3" aria-label="Resumo da lista">
           <ListMetric icon={<ListTodo />} label="Pendentes" value={partitions.pending.length} />
           <ListMetric icon={<CheckCircle2 />} label="Concluídas" value={partitions.completed.length} tone="green" />
-          <ListMetric icon={<CalendarDays />} label="Próximas" value={partitions.upcoming.length} tone="violet" />
+          <ListMetric icon={isWorkList ? <AlertCircle /> : <CalendarDays />} label={isWorkList ? "Atrasadas" : "Próximas"} value={isWorkList ? workPartitions.overdue.length : partitions.upcoming.length} tone={isWorkList ? "red" : "violet"} />
         </section>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">Tarefas da lista</h2>
-          <div className="flex gap-2">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+            <div className="relative min-w-40 flex-1 sm:flex-none"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar tarefas" aria-label="Buscar tarefas por título ou descrição" className="pl-9 sm:w-48" /></div>
             <Select value={priorityFilter} onValueChange={(value) => setPriorityFilter(value ?? "all")}><SelectTrigger className="w-32" aria-label="Filtrar por prioridade"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Prioridade</SelectItem>{priorities.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent></Select>
             <Select value={dueFilter} onValueChange={(value) => setDueFilter(value ?? "all")}><SelectTrigger className="w-32" aria-label="Filtrar por prazo"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Prazo</SelectItem><SelectItem value="upcoming">Próximas</SelectItem><SelectItem value="overdue">Atrasadas</SelectItem><SelectItem value="none">Sem prazo</SelectItem></SelectContent></Select>
+            <Select value={sortBy} onValueChange={(value) => setSortBy(value ?? "due")}><SelectTrigger className="w-36" aria-label="Ordenar tarefas"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="due">Por prazo</SelectItem><SelectItem value="priority">Por prioridade</SelectItem><SelectItem value="created">Mais recentes</SelectItem></SelectContent></Select>
           </div>
         </div>
 
-        <TaskSection title="Pendentes" count={visiblePending.length}>
-          {visiblePending.length ? <div className="divide-y">{visiblePending.map((task) => <TaskRow key={task.id} task={task} lists={lists} labels={labelRows} taskLabelIds={labelLinks.filter((link) => link.task_id === task.id).map((link) => link.label_id)} saving={saving.has(task.id)} onOpen={() => setTaskId(task.id)} onEdit={() => { setEditingTask(task); setFormOpen(true); }} onToggle={() => void mutateTask(task, { status: "done" })} onPriority={(priority) => void mutateTask(task, { priority })} onMove={(listId) => void mutateTask(task, { listId })} onLabel={(label, checked) => void toggleLabel(task, label, checked)} />)}</div> : <p className="px-4 py-8 text-center text-sm text-muted-foreground">{partitions.pending.length ? "Nenhuma tarefa corresponde aos filtros." : "Nenhuma tarefa pendente nesta lista."}</p>}
-        </TaskSection>
-        <TaskSection title="Concluídas" count={partitions.completed.length}>
-          {partitions.completed.length ? <div className="divide-y">{partitions.completed.map((task) => <TaskRow key={task.id} task={task} lists={lists} labels={labelRows} taskLabelIds={labelLinks.filter((link) => link.task_id === task.id).map((link) => link.label_id)} saving={saving.has(task.id)} onOpen={() => setTaskId(task.id)} onEdit={() => { setEditingTask(task); setFormOpen(true); }} onToggle={() => void mutateTask(task, { status: "todo" })} onPriority={(priority) => void mutateTask(task, { priority })} onMove={(listId) => void mutateTask(task, { listId })} onLabel={(label, checked) => void toggleLabel(task, label, checked)} />)}</div> : <p className="px-4 py-8 text-center text-sm text-muted-foreground">Nenhuma tarefa concluída nesta lista.</p>}
-        </TaskSection>
+        {isWorkList && workVisible ? <>
+          {renderTaskSection("Prioridade alta", workVisible.highPriority, "Nenhuma tarefa pendente de prioridade alta.")}
+          {renderTaskSection("Em andamento", workVisible.inProgress, "Nenhuma tarefa em andamento.")}
+          {renderTaskSection("Outras tarefas", workVisible.other, "Nenhuma outra tarefa pendente nesta lista.")}
+          {renderTaskSection("Concluídas", workVisible.completed, "Nenhuma tarefa concluída nesta lista.")}
+        </> : <>
+          {renderTaskSection("Pendentes", visiblePending, partitions.pending.length ? "Nenhuma tarefa corresponde aos filtros." : "Nenhuma tarefa pendente nesta lista.")}
+          {renderTaskSection("Concluídas", sortedTasks.filter((task) => task.status === "done"), partitions.completed.length ? "Nenhuma tarefa corresponde aos filtros." : "Nenhuma tarefa concluída nesta lista.")}
+        </>}
       </div>
 
       <aside className="min-w-0 space-y-4">
+        {isWorkList ? <>
+          <Card className="shadow-none"><CardHeader className="flex flex-row items-start justify-between gap-2 p-4 pb-3"><div><CardTitle className="text-sm">Workspaces associados</CardTitle><CardDescription className="mt-1">Projetos vinculados a tarefas desta lista</CardDescription></div><Badge variant="secondary">{associatedWorkspaces.length}</Badge></CardHeader><CardContent className="px-4 pb-4">{associatedWorkspaces.length ? <div className="space-y-3">{associatedWorkspaces.map(({ workspace, tasks: workspaceTasks }) => { const doneCount = workspaceTasks.filter((task) => task.status === "done").length; const completion = Math.round((doneCount / workspaceTasks.length) * 100); return <div key={workspace.id} className="space-y-1.5"><div className="flex items-center justify-between gap-2"><span className="flex min-w-0 items-center gap-2 text-sm font-medium"><BriefcaseBusiness className="size-4 shrink-0 text-muted-foreground" /><span className="truncate">{workspace.name}</span></span><span className="text-xs text-muted-foreground">{workspaceTasks.length} {workspaceTasks.length === 1 ? "tarefa" : "tarefas"}</span></div><Progress value={completion} aria-label={`${completion}% concluído em ${workspace.name}`} /></div>; })}</div> : <p className="rounded-lg border border-dashed px-3 py-5 text-center text-sm text-muted-foreground">Nenhum workspace está associado às tarefas desta lista.</p>}</CardContent></Card>
+          <Card className="shadow-none"><CardHeader className="p-4 pb-2"><div className="flex items-center justify-between gap-2"><CardTitle className="text-sm">Próximos prazos</CardTitle><Badge variant="secondary">{upcoming.length}</Badge></div><CardDescription>Tarefas pendentes com prazo a partir de hoje</CardDescription></CardHeader><CardContent className="px-4 pb-4">{upcoming.length ? <div className="space-y-3">{upcoming.map((task) => <button type="button" key={task.id} onClick={() => setTaskId(task.id)} className="flex w-full items-start gap-3 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><CalendarDays className="size-4" /></span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{task.title}</span><span className="mt-1 block text-xs text-muted-foreground">{task.due_on ? humanDate(task.due_on) : "Sem data"}{task.due_at ? ` · ${new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(new Date(task.due_at))}` : ""}</span></span></button>)}</div> : <p className="py-3 text-sm text-muted-foreground">Nenhum prazo próximo registrado.</p>}</CardContent></Card>
+          {workPartitions.overdue.length ? <Alert variant="destructive"><AlertCircle className="size-4" /><AlertTitle>Tarefas atrasadas</AlertTitle><AlertDescription>{workPartitions.overdue.length} {workPartitions.overdue.length === 1 ? "tarefa pendente passou" : "tarefas pendentes passaram"} do prazo. {workPartitions.overdue.slice(0, 3).map((task) => task.title).join(" · ")}</AlertDescription></Alert> : <Card className="shadow-none"><CardContent className="flex items-center gap-3 p-4"><CheckCircle2 className="size-5 text-emerald-600" /><p className="text-sm text-muted-foreground">Nenhuma tarefa atrasada nesta lista.</p></CardContent></Card>}
+        </> : <>
         <Card className="shadow-none"><CardHeader className="space-y-2 p-4 pb-2"><div className="flex items-center justify-between"><CardTitle className="text-sm">Meu progresso na lista</CardTitle><Badge variant="secondary">{progress}%</Badge></div><CardDescription>{partitions.completed.length} concluídas · {partitions.pending.length} pendentes</CardDescription></CardHeader><CardContent className="px-4 pb-4"><Progress value={progress} aria-label={`Progresso da lista: ${progress}%`} /><p className="mt-2 text-xs text-muted-foreground">{listTasks.length ? `${partitions.completed.length} de ${listTasks.length} tarefas concluídas` : "O progresso aparece quando você adicionar tarefas."}</p></CardContent></Card>
 
         <Card className="shadow-none"><CardHeader className="flex flex-row items-start justify-between gap-2 p-4 pb-3"><div><CardTitle className="text-sm">Etiquetas mais usadas</CardTitle><CardDescription className="mt-1">Associações reais às tarefas desta lista</CardDescription></div><Button variant="ghost" size="icon" aria-label="Criar etiqueta" onClick={() => setLabelOpen(true)}><Plus className="size-4" /></Button></CardHeader><CardContent className="px-4 pb-4">{popularLabels.length ? <div className="space-y-3">{popularLabels.map((label) => <div key={label.id} className="flex items-center justify-between gap-3"><span className="flex min-w-0 items-center gap-2 text-sm"><Tags className="size-4 shrink-0 text-muted-foreground" /><span className="truncate">{label.name}</span></span><Badge variant="secondary">{usage.get(label.id)} {usage.get(label.id) === 1 ? "tarefa" : "tarefas"}</Badge></div>)}</div> : <div className="rounded-lg border border-dashed px-3 py-5 text-center"><p className="text-sm text-muted-foreground">Nenhuma etiqueta vinculada a tarefas desta lista.</p><Button variant="link" size="sm" className="mt-1" onClick={() => setLabelOpen(true)}>Criar etiqueta</Button></div>}</CardContent></Card>
 
         <Card className="shadow-none"><CardHeader className="p-4 pb-2"><CardTitle className="text-sm">Próximos compromissos</CardTitle><CardDescription>Próximas datas desta lista</CardDescription></CardHeader><CardContent className="px-4 pb-4">{upcoming.length ? <div className="space-y-3">{upcoming.map((task) => <button type="button" key={task.id} onClick={() => setTaskId(task.id)} className="flex w-full items-start gap-3 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><CalendarDays className="size-4" /></span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{task.title}</span><span className="mt-1 block text-xs text-muted-foreground">{task.due_on ? humanDate(task.due_on) : "Sem data"}{task.due_at ? ` · ${new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(new Date(task.due_at))}` : ""}</span></span></button>)}</div> : <p className="py-3 text-sm text-muted-foreground">Nenhum prazo futuro registrado nesta lista.</p>}</CardContent></Card>
+        </>}
       </aside>
     </main>
 
@@ -215,8 +251,8 @@ export function TodoListPage({ listId }: { listId: string }) {
   </>;
 }
 
-function ListMetric({ icon, label, value, tone = "blue" }: { icon: React.ReactNode; label: string; value: number; tone?: "blue" | "green" | "violet" }) {
-  const tones = { blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400", green: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", violet: "bg-violet-500/10 text-violet-600 dark:text-violet-400" };
+function ListMetric({ icon, label, value, tone = "blue" }: { icon: React.ReactNode; label: string; value: number; tone?: "blue" | "green" | "violet" | "red" }) {
+  const tones = { blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400", green: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", violet: "bg-violet-500/10 text-violet-600 dark:text-violet-400", red: "bg-destructive/10 text-destructive" };
   return <Card className="shadow-none"><CardContent className="flex items-center gap-3 p-4"><span className={cn("grid size-10 place-items-center rounded-xl", tones[tone])}>{icon}</span><div><p className="text-2xl font-semibold tabular-nums">{value}</p><p className="text-xs text-muted-foreground">{label}</p></div></CardContent></Card>;
 }
 
@@ -224,14 +260,15 @@ function TaskSection({ title, count, children }: { title: string; count: number;
   return <section className="overflow-hidden rounded-xl border bg-card"><header className="flex items-center justify-between border-b bg-muted/20 px-4 py-3"><h2 className="text-sm font-semibold">{title}</h2><Badge variant="secondary">{count}</Badge></header>{children}</section>;
 }
 
-function TaskRow({ task, lists, labels, taskLabelIds, saving, onOpen, onEdit, onToggle, onPriority, onMove, onLabel }: { task: TodoTask; lists: TodoList[]; labels: TodoLabel[]; taskLabelIds: string[]; saving: boolean; onOpen: () => void; onEdit: () => void; onToggle: () => void; onPriority: (priority: string) => void; onMove: (listId: string) => void; onLabel: (label: TodoLabel, checked: boolean) => void }) {
+function TaskRow({ task, lists, labels, taskLabelIds, saving, onOpen, onEdit, onToggle, onStatus, onPriority, onMove, onLabel }: { task: TodoTask; lists: TodoList[]; labels: TodoLabel[]; taskLabelIds: string[]; saving: boolean; onOpen: () => void; onEdit: () => void; onToggle: () => void; onStatus: (status: "todo" | "in_progress" | "done") => void; onPriority: (priority: string) => void; onMove: (listId: string) => void; onLabel: (label: TodoLabel, checked: boolean) => void }) {
   const done = task.status === "done";
   const currentList = lists.find((list) => list.id === task.list_id);
   const labelNames = labels.filter((label) => taskLabelIds.includes(label.id));
   return <div className="flex min-w-0 items-center gap-3 px-3 py-3 sm:px-4">
     <button type="button" disabled={saving} onClick={onToggle} aria-label={done ? `Reabrir ${task.title}` : `Concluir ${task.title}`} aria-pressed={done} className="grid size-5 shrink-0 place-items-center rounded border border-input text-primary transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50">{saving ? <LoaderCircle className="size-3.5 animate-spin" /> : done ? <Check className="size-3.5" /> : null}</button>
     <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className={cn("block break-words text-sm font-medium", done && "text-muted-foreground line-through")}>{task.title}</span><span className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">{task.description ? <span className="max-w-md truncate">{task.description}</span> : null}{currentList ? <span className="inline-flex items-center gap-1"><ListTodo className="size-3" />{currentList.name}</span> : null}{task.due_on ? <span className="inline-flex items-center gap-1"><CalendarDays className="size-3" />{humanDate(task.due_on)}</span> : null}{task.due_at ? <span className="inline-flex items-center gap-1"><Clock3 className="size-3" />{new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(new Date(task.due_at))}</span> : null}{labelNames.map((label) => <Badge key={label.id} variant="outline" className="h-5 px-1.5 text-[10px]">{label.name}</Badge>)}</span></button>
+    {task.status === "in_progress" ? <Badge variant="outline" className="hidden sm:inline-flex">Em andamento</Badge> : null}
     <Badge variant={task.priority === "high" ? "destructive" : "secondary"} className="hidden sm:inline-flex">{task.priority === "high" ? "Alta" : task.priority === "low" ? "Baixa" : "Média"}</Badge>
-    <DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8 shrink-0" aria-label={`Ações de ${task.title}`}><MoreHorizontal /></Button>} /><DropdownMenuContent align="end"><DropdownMenuItem onClick={onOpen}>Abrir detalhes</DropdownMenuItem><DropdownMenuItem onClick={onEdit}><Pencil />Editar tarefa</DropdownMenuItem><DropdownMenuSub><DropdownMenuSubTrigger>Prioridade</DropdownMenuSubTrigger><DropdownMenuSubContent>{priorities.map((item) => <DropdownMenuItem key={item.value} disabled={task.priority === item.value || saving} onClick={() => onPriority(item.value)}>{task.priority === item.value ? <Check /> : null}{item.label}</DropdownMenuItem>)}</DropdownMenuSubContent></DropdownMenuSub><DropdownMenuSub><DropdownMenuSubTrigger>Mover para lista</DropdownMenuSubTrigger><DropdownMenuSubContent>{lists.map((list) => <DropdownMenuItem key={list.id} disabled={list.id === task.list_id || saving} onClick={() => onMove(list.id)}>{list.id === task.list_id ? <Check /> : null}{list.name}</DropdownMenuItem>)}</DropdownMenuSubContent></DropdownMenuSub>{labels.length ? <DropdownMenuSub><DropdownMenuSubTrigger>Etiquetas</DropdownMenuSubTrigger><DropdownMenuSubContent>{labels.map((label) => <DropdownMenuCheckboxItem key={label.id} checked={taskLabelIds.includes(label.id)} onCheckedChange={(checked) => onLabel(label, checked)}>{label.name}</DropdownMenuCheckboxItem>)}</DropdownMenuSubContent></DropdownMenuSub> : null}<DropdownMenuItem onClick={onToggle}>{done ? <Circle /> : <CheckCircle2 />}{done ? "Reabrir" : "Concluir"}</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+    <DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8 shrink-0" aria-label={`Ações de ${task.title}`}><MoreHorizontal /></Button>} /><DropdownMenuContent align="end"><DropdownMenuItem onClick={onOpen}>Abrir detalhes</DropdownMenuItem><DropdownMenuItem onClick={onEdit}><Pencil />Editar tarefa</DropdownMenuItem><DropdownMenuSub><DropdownMenuSubTrigger>Status</DropdownMenuSubTrigger><DropdownMenuSubContent>{([{ value: "todo", label: "Pendente" }, { value: "in_progress", label: "Em andamento" }, { value: "done", label: "Concluída" }] as const).map((item) => <DropdownMenuItem key={item.value} disabled={task.status === item.value || saving} onClick={() => onStatus(item.value)}>{task.status === item.value ? <Check /> : null}{item.label}</DropdownMenuItem>)}</DropdownMenuSubContent></DropdownMenuSub><DropdownMenuSub><DropdownMenuSubTrigger>Prioridade</DropdownMenuSubTrigger><DropdownMenuSubContent>{priorities.map((item) => <DropdownMenuItem key={item.value} disabled={task.priority === item.value || saving} onClick={() => onPriority(item.value)}>{task.priority === item.value ? <Check /> : null}{item.label}</DropdownMenuItem>)}</DropdownMenuSubContent></DropdownMenuSub><DropdownMenuSub><DropdownMenuSubTrigger>Mover para lista</DropdownMenuSubTrigger><DropdownMenuSubContent>{lists.map((list) => <DropdownMenuItem key={list.id} disabled={list.id === task.list_id || saving} onClick={() => onMove(list.id)}>{list.id === task.list_id ? <Check /> : null}{list.name}</DropdownMenuItem>)}</DropdownMenuSubContent></DropdownMenuSub>{labels.length ? <DropdownMenuSub><DropdownMenuSubTrigger>Etiquetas</DropdownMenuSubTrigger><DropdownMenuSubContent>{labels.map((label) => <DropdownMenuCheckboxItem key={label.id} checked={taskLabelIds.includes(label.id)} onCheckedChange={(checked) => onLabel(label, checked)}>{label.name}</DropdownMenuCheckboxItem>)}</DropdownMenuSubContent></DropdownMenuSub> : null}<DropdownMenuItem onClick={onToggle}>{done ? <Circle /> : <CheckCircle2 />}{done ? "Reabrir" : "Concluir"}</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
   </div>;
 }
