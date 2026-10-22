@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
 import { todoTaskAction } from "@/features/todo/actions";
-import type { TodoList, TodoWorkspace } from "@/features/todo/domain/types";
+import type { TodoList, TodoTask, TodoWorkspace } from "@/features/todo/domain/types";
 import { localDateKey } from "@/features/todo/domain/dashboard";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -19,24 +19,26 @@ type TodoTaskFormDialogProps = {
   lists: TodoList[];
   workspaces: TodoWorkspace[];
   initialDate: string;
+  initialListId?: string;
+  initialTask?: TodoTask | null;
   onCreated: () => Promise<void>;
 };
 
-export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, initialDate, onCreated }: TodoTaskFormDialogProps) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [listId, setListId] = useState("");
-  const [workspaceId, setWorkspaceId] = useState("none");
-  const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
-  const [dueOn, setDueOn] = useState("");
-  const [dueTime, setDueTime] = useState("");
+export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, initialDate, initialListId, initialTask = null, onCreated }: TodoTaskFormDialogProps) {
+  const [title, setTitle] = useState(initialTask?.title ?? "");
+  const [description, setDescription] = useState(initialTask?.description ?? "");
+  const [listId, setListId] = useState(initialTask?.list_id ?? initialListId ?? "");
+  const [workspaceId, setWorkspaceId] = useState(initialTask?.workspace_id ?? "none");
+  const [priority, setPriority] = useState<"low" | "medium" | "high">((initialTask?.priority as "low" | "medium" | "high" | undefined) ?? "medium");
+  const [dueOn, setDueOn] = useState(initialTask?.due_on ?? "");
+  const [dueTime, setDueTime] = useState(initialTask?.due_at ? new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(initialTask.due_at)) : "");
   const [saving, setSaving] = useState(false);
   const listItems = lists.map((list) => ({ value: list.id, label: list.name }));
   const workspaceItems = [{ value: "none", label: "Sem workspace" }, ...workspaces.map((workspace) => ({ value: workspace.id, label: workspace.name }))];
   const priorityItems = [{ value: "low", label: "Baixa" }, { value: "medium", label: "Média" }, { value: "high", label: "Alta" }] as const;
 
   const reset = () => {
-    setTitle(""); setDescription(""); setWorkspaceId("none"); setPriority("medium"); setDueOn(""); setDueTime("");
+    setTitle(initialTask?.title ?? ""); setDescription(initialTask?.description ?? ""); setListId(initialTask?.list_id ?? initialListId ?? ""); setWorkspaceId(initialTask?.workspace_id ?? "none"); setPriority((initialTask?.priority as "low" | "medium" | "high" | undefined) ?? "medium"); setDueOn(initialTask?.due_on ?? ""); setDueTime(initialTask?.due_at ? new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(initialTask.due_at)) : "");
   };
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -45,24 +47,26 @@ export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, init
     if (!targetListId) { toast.error("Crie ou selecione uma lista para salvar a tarefa."); return; }
     setSaving(true);
     try {
-      const result = await todoTaskAction({
-        operation: "create",
+      const fields = {
         title,
         description: description.trim() || null,
         listId: targetListId,
         workspaceId: workspaceId === "none" ? null : workspaceId,
         priority,
-        startsOn: initialDate || localDateKey(new Date()),
+        startsOn: (initialTask?.starts_on ?? initialDate) || localDateKey(new Date()),
         dueOn: dueOn || null,
         dueAt: dueOn && dueTime ? new Date(`${dueOn}T${dueTime}`).toISOString() : null,
-      });
+      };
+      const result = initialTask
+        ? await todoTaskAction({ operation: "update", id: initialTask.id, ...fields })
+        : await todoTaskAction({ operation: "create", ...fields });
       if (!result.ok) { toast.error(result.message); return; }
-      toast.success("Tarefa criada.");
+      toast.success(initialTask ? "Tarefa atualizada." : "Tarefa criada.");
       reset();
       onOpenChange(false);
       await onCreated();
     } catch {
-      toast.error("Não foi possível criar a tarefa. Tente novamente.");
+      toast.error(initialTask ? "Não foi possível atualizar a tarefa. Tente novamente." : "Não foi possível criar a tarefa. Tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -72,7 +76,7 @@ export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, init
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) reset(); onOpenChange(nextOpen); }}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle className="text-xl">Nova tarefa</DialogTitle>
+          <DialogTitle className="text-xl">{initialTask ? "Editar tarefa" : "Nova tarefa"}</DialogTitle>
           <DialogDescription>Organize o que precisa fazer e escolha quando pretende concluir.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -88,7 +92,7 @@ export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, init
             <div className="space-y-2">
               <Label>Lista</Label>
               <Select items={listItems} value={listId || lists[0]?.id || ""} onValueChange={(value) => setListId(value ?? "")}>
-                <SelectTrigger className="w-full"><SelectValue placeholder="Selecione uma lista" /></SelectTrigger>
+                <SelectTrigger className="w-full" disabled={Boolean(initialListId && !initialTask)}><SelectValue placeholder="Selecione uma lista" /></SelectTrigger>
                 <SelectContent>{lists.map((list) => <SelectItem key={list.id} value={list.id}>{list.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
@@ -119,7 +123,7 @@ export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, init
           <DialogFooter className="-mx-4 -mb-4 mt-6">
             <Button type="button" variant="outline" disabled={saving} onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button type="submit" disabled={saving || lists.length === 0}>
-              {saving ? <><LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> Salvando…</> : "Criar tarefa"}
+              {saving ? <><LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> Salvando…</> : initialTask ? "Salvar alterações" : "Criar tarefa"}
             </Button>
           </DialogFooter>
         </form>

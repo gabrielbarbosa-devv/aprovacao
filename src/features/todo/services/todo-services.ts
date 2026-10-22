@@ -46,6 +46,11 @@ export const todoListsService = {
     const { error } = await supabase.from("todo_lists").delete().eq("id", id).eq("user_id", user.id);
     throwOnError(error);
   },
+  async deleteWithTransfer(id: string, targetListId: string | null) {
+    const { data, error } = await (await context()).supabase.rpc("delete_todo_list_with_transfer", { p_list_id: id, p_target_list_id: targetListId });
+    throwOnError(error);
+    return data;
+  },
 };
 
 export const todoWorkspacesService = {
@@ -208,6 +213,13 @@ export const todoTaskLabelsService = {
   async list(taskId: string) {
     const { user, supabase } = await context();
     const { data, error } = await supabase.from("todo_task_labels").select("*").eq("user_id", user.id).eq("task_id", taskId);
+    throwOnError(error);
+    return data ?? [];
+  },
+  async listForTasks(taskIds: string[]) {
+    if (taskIds.length === 0) return [];
+    const { user, supabase } = await context();
+    const { data, error } = await supabase.from("todo_task_labels").select("*").eq("user_id", user.id).in("task_id", taskIds);
     throwOnError(error);
     return data ?? [];
   },

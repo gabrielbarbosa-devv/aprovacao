@@ -31,6 +31,8 @@ describe("To-Do additive schema and RLS", () => {
     `);
     const migration = await readFile(resolve(process.cwd(), "supabase/migrations/20261022164746_add_todo_module_backend.sql"), "utf8");
     await db.exec(migration);
+    const transferMigration = await readFile(resolve(process.cwd(), "supabase/migrations/20261022193448_todo_list_atomic_transfer.sql"), "utf8");
+    await db.exec(transferMigration);
   });
 
   afterAll(async () => { await db.close(); });
@@ -95,5 +97,27 @@ describe("To-Do additive schema and RLS", () => {
     const completionHistory = await rows<{ action: string }>(`select action from public.todo_activity_logs where task_id='${taskA}' and action in ('completed','reopened') order by created_at, action`);
     expect(completionHistory.filter((item) => item.action === "completed")).toHaveLength(2);
     expect(completionHistory.filter((item) => item.action === "reopened")).toHaveLength(1);
+  });
+
+  it("transfers active and soft-deleted tasks atomically before deleting a list", async () => {
+    await db.exec(`set request.jwt.claim.sub='${userA}'; set role authenticated;`);
+    const source = (await rows<{ id: string }>(`insert into public.todo_lists(user_id,name,slug) values ('${userA}','Temporária','temporaria') returning id`))[0].id;
+    const target = (await rows<{ id: string }>(`select id from public.todo_lists where user_id='${userA}' and slug='trabalho'`))[0].id;
+    const foreignTarget = (await rows<{ id: string }>(`select id from public.todo_lists where user_id='${userB}' and slug='pessoal'`))[0]?.id;
+    await db.exec(`insert into public.todo_tasks(user_id,list_id,title) values ('${userA}','${source}','Ativa'),('${userA}','${source}','Removida'); update public.todo_tasks set deleted_at=now() where user_id='${userA}' and title='Removida';`);
+
+    await expectSqlFailure(`select public.delete_todo_list_with_transfer('${source}', null)`);
+    expect(await rows<{ id: string }>(`select id from public.todo_lists where id='${source}'`)).toHaveLength(1);
+    expect(await rows<{ list_id: string }>(`select list_id from public.todo_tasks where list_id='${source}'`)).toHaveLength(2);
+    if (foreignTarget) await expectSqlFailure(`select public.delete_todo_list_with_transfer('${source}', '${foreignTarget}')`);
+
+    const moved = await rows<{ delete_todo_list_with_transfer: number }>(`select public.delete_todo_list_with_transfer('${source}', '${target}')`);
+    expect(moved[0].delete_todo_list_with_transfer).toBe(2);
+    expect(await rows<{ id: string }>(`select id from public.todo_lists where id='${source}'`)).toHaveLength(0);
+    expect(await rows<{ list_id: string; deleted_at: string | null }>(`select list_id,deleted_at from public.todo_tasks where user_id='${userA}' and title in ('Ativa','Removida')`)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ list_id: target, deleted_at: null }),
+      expect.objectContaining({ list_id: target }),
+    ]));
+    await db.exec("reset role");
   });
 });

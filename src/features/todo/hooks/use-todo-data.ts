@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import {
-  loadTodoActivityAction, loadTodoLabelsAction, loadTodoListsAction, loadTodoSubtasksAction,
+  loadTodoActivityAction, loadTodoLabelsAction, loadTodoListsAction, loadTodoSubtasksAction, loadTodoTaskLabelsForTasksAction,
   loadTodoTaskLabelsAction, loadTodoTasksAction, loadTodoWorkspacesAction,
 } from "@/features/todo/actions";
 import { useTodoResource } from "@/features/todo/hooks/use-todo-resource";
@@ -16,9 +16,9 @@ export function useTodoWorkspaces() {
   return useTodoResource(loadTodoWorkspacesAction);
 }
 
-export function useTodoTasks(filters: { listId?: string; workspaceId?: string; status?: "todo" | "in_progress" | "done" } = {}) {
-  const { listId, workspaceId, status } = filters;
-  const loader = useCallback(() => loadTodoTasksAction({ listId, workspaceId, status }), [listId, workspaceId, status]);
+export function useTodoTasks(filters: { listId?: string; workspaceId?: string; status?: "todo" | "in_progress" | "done"; includeDeleted?: boolean } = {}) {
+  const { listId, workspaceId, status, includeDeleted } = filters;
+  const loader = useCallback(() => loadTodoTasksAction({ listId, workspaceId, status, includeDeleted }), [listId, workspaceId, status, includeDeleted]);
   return useTodoResource(loader);
 }
 
@@ -33,6 +33,12 @@ export function useTodoLabels() {
 
 export function useTodoTaskLabels(taskId: string) {
   const loader = useCallback(() => loadTodoTaskLabelsAction({ taskId }), [taskId]);
+  return useTodoResource(loader);
+}
+
+export function useTodoLabelsForTasks(taskIds: string[]) {
+  const key = taskIds.join(",");
+  const loader = useCallback(() => loadTodoTaskLabelsForTasksAction({ taskIds: key ? key.split(",") : [] }), [key]);
   return useTodoResource(loader);
 }
 

@@ -447,6 +447,7 @@ export type Database = {
         Returns: string
       }
       initialize_todo_lists: { Args: Record<PropertyKey, never>; Returns: Database["public"]["Tables"]["todo_lists"]["Row"][] }
+      delete_todo_list_with_transfer: { Args: { p_list_id: string; p_target_list_id?: string | null }; Returns: number }
     }
     Enums: {
       [_ in never]: never

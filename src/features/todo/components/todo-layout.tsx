@@ -83,10 +83,10 @@ function TodoSidebarContent({ email }: { email: string }) {
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
               {loading ? <SidebarMenuItem><Skeleton className="mx-2 h-8" /></SidebarMenuItem> : lists.map((list) => {
-                const active = view === "list" && selectedListId === list.id;
+                const active = pathname === `/todo/lists/${list.id}` || (view === "list" && selectedListId === list.id);
                 return (
                   <SidebarMenuItem key={list.id}>
-                    <SidebarMenuButton type="button" onClick={() => { setSelectedWorkspaceId(null); setSelectedDate(null); setSelectedListId(list.id); setView("list"); router.push("/todo"); }} isActive={active} aria-current={active ? "page" : undefined} tooltip={list.name} className="h-9 px-3">
+                    <SidebarMenuButton type="button" onClick={() => { setSelectedWorkspaceId(null); setSelectedDate(null); setSelectedListId(list.id); setView("list"); router.push(`/todo/lists/${list.id}`); }} isActive={active} aria-current={active ? "page" : undefined} tooltip={list.name} className="h-9 px-3">
                       <ListTodo aria-hidden="true" /><span>{list.name}</span><Badge variant="secondary" className="ml-auto h-5 min-w-6 justify-center px-1 text-[10px] group-data-[collapsible=icon]:hidden">{openCount(list.id)}</Badge>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

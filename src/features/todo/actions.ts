@@ -34,7 +34,7 @@ export async function loadTodoListsAction(): Promise<TodoActionResult<Awaited<Re
 }
 export async function loadTodoWorkspacesAction() { return run(() => todoWorkspacesService.list()); }
 export async function loadTodoTasksAction(input: unknown) {
-  const schema = z.object({ listId: z.uuid().optional(), workspaceId: z.uuid().optional(), status: z.enum(["todo", "in_progress", "done"]).optional() }).strict();
+  const schema = z.object({ listId: z.uuid().optional(), workspaceId: z.uuid().optional(), status: z.enum(["todo", "in_progress", "done"]).optional(), includeDeleted: z.boolean().optional() }).strict();
   const parsed = parse(schema, input);
   if (!parsed.ok) return parsed.result;
   return run(() => todoTasksService.list(parsed.value));
@@ -52,6 +52,12 @@ export async function loadTodoTaskLabelsAction(input: unknown) {
   const { taskId } = parsed.value;
   return run(() => todoTaskLabelsService.list(taskId));
 }
+export async function loadTodoTaskLabelsForTasksAction(input: unknown) {
+  const schema = z.object({ taskIds: z.array(z.uuid()).max(500) }).strict();
+  const parsed = parse(schema, input);
+  if (!parsed.ok) return parsed.result;
+  return run(() => todoTaskLabelsService.listForTasks(parsed.value.taskIds));
+}
 export async function loadTodoActivityAction(input: unknown) {
   const parsed = parse(todoTaskIdSchema, input);
   if (!parsed.ok) return parsed.result;
@@ -65,12 +71,14 @@ export async function todoListAction(input: unknown) {
     todoListInputSchema.extend({ operation: z.literal("create") }),
     todoListUpdateSchema.extend({ operation: z.literal("update") }),
     deleteSchema.extend({ operation: z.literal("delete") }),
+    deleteSchema.extend({ operation: z.literal("delete_with_transfer"), targetListId: z.uuid().nullable() }),
   ]);
   const parsed = parse(schema, input);
   if (!parsed.ok) return parsed.result;
   const value = parsed.value;
   if (value.operation === "create") { const { operation, ...payload } = value; void operation; return run(() => todoListsService.create(payload)); }
   if (value.operation === "update") { const { operation, ...payload } = value; void operation; return run(() => todoListsService.update(payload)); }
+  if (value.operation === "delete_with_transfer") return run(() => todoListsService.deleteWithTransfer(value.id, value.targetListId));
   return run(async () => { await todoListsService.delete(value.id); return null; });
 }
 export async function todoWorkspaceAction(input: unknown) {
