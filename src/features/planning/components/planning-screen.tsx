@@ -128,7 +128,7 @@ export function PlanningScreen({ data }: { data: PlanningData }) {
         {weekBlockCount === 0 ? <div className="mt-5 rounded-xl border border-dashed bg-background p-5 sm:p-6">
           <h2 className="text-sm font-semibold">{data.blocks.length === 0 ? "Seu planejamento ainda está vazio." : "Não há blocos nesta semana."}</h2>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{data.topics.length === 0 ? "Para adicionar um bloco, primeiro cadastre matérias e tópicos. Se preferir, crie seu plano inicial na tela Hoje." : "Adicione um bloco para organizar seus próximos estudos. Os dados serão salvos na sua conta."}</p>
-          {data.topics.length === 0 ? <Button render={<Link href="/" />} variant="outline" className="mt-4">Ir para Hoje</Button> : <div className="mt-4"><AddBlockDialog topics={data.topics} initialDate={selectedDate} /></div>}
+          {data.topics.length === 0 ? <Button render={<Link href="/hoje" />} variant="outline" className="mt-4">Ir para Hoje</Button> : <div className="mt-4"><AddBlockDialog topics={data.topics} initialDate={selectedDate} /></div>}
         </div> : null}
 
         {data.topics.length === 0 && weekBlockCount > 0 ? <p className="mt-4 rounded-lg border bg-background p-3 text-sm text-muted-foreground">Para criar novos blocos, cadastre matérias e tópicos na tela Hoje.</p> : null}

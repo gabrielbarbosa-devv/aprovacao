@@ -43,7 +43,7 @@ type SidebarProps = {
 };
 
 const navigationItems = [
-  { id: "hoje", label: "Hoje", href: "/", icon: Home },
+  { id: "hoje", label: "Hoje", href: "/hoje", icon: Home },
   { id: "planejamento", label: "Planejamento", href: "/planejamento", icon: CalendarDays },
   { id: "materias", label: "Matérias", href: "/materias", icon: BookOpen },
   { id: "revisoes", label: "Revisões", href: "/revisoes", icon: RefreshCw },
@@ -63,7 +63,7 @@ export function Sidebar({ email, activeItem = "hoje" }: SidebarProps) {
   return (
     <>
       <SidebarHeader className="px-4 pb-5 pt-5">
-        <Link href="/" className="flex min-w-0 items-center gap-3" aria-label="Operação Aprovação, Hoje">
+        <Link href="/hoje" className="flex min-w-0 items-center gap-3" aria-label="Operação Aprovação, Hoje">
           <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
             <CircleDot aria-hidden="true" className="size-5" />
           </span>

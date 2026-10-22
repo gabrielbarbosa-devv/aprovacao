@@ -6,6 +6,13 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+type TodoTable<Row, Insert, Update, Relationships = []> = {
+  Row: Row
+  Insert: Insert
+  Update: Update
+  Relationships: Relationships
+}
+
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
@@ -320,6 +327,51 @@ export type Database = {
         Update: never
         Relationships: []
       }
+      todo_lists: TodoTable<
+        { id: string; user_id: string; name: string; slug: string; icon: string; color: string; position: number; created_at: string; updated_at: string },
+        { id?: string; user_id: string; name: string; slug: string; icon?: string; color?: string; position?: number; created_at?: string; updated_at?: string },
+        { id?: string; user_id?: string; name?: string; slug?: string; icon?: string; color?: string; position?: number; created_at?: string; updated_at?: string }
+      >
+      todo_workspaces: TodoTable<
+        { id: string; user_id: string; name: string; description: string | null; icon: string; color: string; created_at: string; updated_at: string },
+        { id?: string; user_id: string; name: string; description?: string | null; icon?: string; color?: string; created_at?: string; updated_at?: string },
+        { id?: string; user_id?: string; name?: string; description?: string | null; icon?: string; color?: string; created_at?: string; updated_at?: string }
+      >
+      todo_tasks: TodoTable<
+        { id: string; user_id: string; list_id: string; workspace_id: string | null; title: string; description: string | null; status: string; priority: string; starts_on: string; due_on: string | null; due_at: string | null; completed_at: string | null; position: number; created_at: string; updated_at: string; deleted_at: string | null },
+        { id?: string; user_id: string; list_id: string; workspace_id?: string | null; title: string; description?: string | null; status?: string; priority?: string; starts_on?: string; due_on?: string | null; due_at?: string | null; completed_at?: string | null; position?: number; created_at?: string; updated_at?: string; deleted_at?: string | null },
+        { id?: string; user_id?: string; list_id?: string; workspace_id?: string | null; title?: string; description?: string | null; status?: string; priority?: string; starts_on?: string; due_on?: string | null; due_at?: string | null; completed_at?: string | null; position?: number; created_at?: string; updated_at?: string; deleted_at?: string | null },
+        [
+          { foreignKeyName: "todo_tasks_list_owner_fkey"; columns: ["list_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_lists"; referencedColumns: ["id", "user_id"] },
+          { foreignKeyName: "todo_tasks_workspace_owner_fkey"; columns: ["workspace_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_workspaces"; referencedColumns: ["id", "user_id"] },
+        ]
+      >
+      todo_subtasks: TodoTable<
+        { id: string; user_id: string; task_id: string; title: string; is_completed: boolean; position: number; created_at: string; updated_at: string },
+        { id?: string; user_id: string; task_id: string; title: string; is_completed?: boolean; position?: number; created_at?: string; updated_at?: string },
+        { id?: string; user_id?: string; task_id?: string; title?: string; is_completed?: boolean; position?: number; created_at?: string; updated_at?: string },
+        [{ foreignKeyName: "todo_subtasks_task_owner_fkey"; columns: ["task_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_tasks"; referencedColumns: ["id", "user_id"] }]
+      >
+      todo_labels: TodoTable<
+        { id: string; user_id: string; name: string; color: string; created_at: string; updated_at: string },
+        { id?: string; user_id: string; name: string; color?: string; created_at?: string; updated_at?: string },
+        { id?: string; user_id?: string; name?: string; color?: string; created_at?: string; updated_at?: string }
+      >
+      todo_task_labels: TodoTable<
+        { user_id: string; task_id: string; label_id: string; created_at: string },
+        { user_id: string; task_id: string; label_id: string; created_at?: string },
+        never,
+        [
+          { foreignKeyName: "todo_task_labels_task_owner_fkey"; columns: ["task_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_tasks"; referencedColumns: ["id", "user_id"] },
+          { foreignKeyName: "todo_task_labels_label_owner_fkey"; columns: ["label_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_labels"; referencedColumns: ["id", "user_id"] },
+        ]
+      >
+      todo_activity_logs: TodoTable<
+        { id: string; user_id: string; task_id: string; action: string; metadata: Json; created_at: string },
+        { id?: string; user_id: string; task_id: string; action: string; metadata?: Json; created_at?: string },
+        { id?: string; user_id?: string; task_id?: string; action?: string; metadata?: Json; created_at?: string },
+        [{ foreignKeyName: "todo_activity_logs_task_owner_fkey"; columns: ["task_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_tasks"; referencedColumns: ["id", "user_id"] }]
+      >
     }
     Views: {
       [_ in never]: never
@@ -394,6 +446,7 @@ export type Database = {
         }
         Returns: string
       }
+      initialize_todo_lists: { Args: Record<PropertyKey, never>; Returns: Database["public"]["Tables"]["todo_lists"]["Row"][] }
     }
     Enums: {
       [_ in never]: never
