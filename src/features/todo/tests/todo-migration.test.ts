@@ -87,5 +87,13 @@ describe("To-Do additive schema and RLS", () => {
     expect(persisted[0]).toMatchObject({ priority: "high", status: "todo" });
     expect(persisted[0].due_on).not.toBeNull();
     expect((await rows<{ id: string }>(`select id from public.todo_tasks where user_id='${userB}'`))).toHaveLength(1);
+
+    await db.exec(`set request.jwt.claim.sub='${userA}'; set role authenticated; update public.todo_tasks set status='done', completed_at=now() where id='${taskA}'; reset role;`);
+    const completedAgain = (await rows<{ status: string; completed_at: string | null }>(`select status,completed_at from public.todo_tasks where id='${taskA}'`))[0];
+    expect(completedAgain).toMatchObject({ status: "done" });
+    expect(completedAgain.completed_at).not.toBeNull();
+    const completionHistory = await rows<{ action: string }>(`select action from public.todo_activity_logs where task_id='${taskA}' and action in ('completed','reopened') order by created_at, action`);
+    expect(completionHistory.filter((item) => item.action === "completed")).toHaveLength(2);
+    expect(completionHistory.filter((item) => item.action === "reopened")).toHaveLength(1);
   });
 });
