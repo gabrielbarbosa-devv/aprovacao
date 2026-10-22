@@ -55,6 +55,46 @@ export function isTaskScheduledOn(task: TodoTaskDate, dateKey: string): boolean 
   return task.starts_on === dateKey || task.due_on === dateKey || dueAtKey === dateKey;
 }
 
+export type TodoTodayGroups = {
+  overdue: TodoTask[];
+  highPriority: TodoTask[];
+  other: TodoTask[];
+  completed: TodoTask[];
+};
+
+/** Tasks due, started, or active on the selected local calendar day. */
+export function getTasksForDay(tasks: TodoTask[], dateKey: string): TodoTask[] {
+  return tasks.filter((task) => {
+    if (task.status === "done") return false;
+    const dueDate = taskDueDateKey(task);
+    if (dueDate && dueDate < dateKey) return true;
+    return isTaskActiveOn(task, dateKey);
+  });
+}
+
+/** Partitions a day's tasks into mutually exclusive sections. */
+export function groupTodoTasksForDay(tasks: TodoTask[], dateKey: string): TodoTodayGroups {
+  const overdue: TodoTask[] = [];
+  const highPriority: TodoTask[] = [];
+  const other: TodoTask[] = [];
+  const completed: TodoTask[] = [];
+
+  for (const task of tasks) {
+    if (task.status === "done") {
+      const completedToday = task.completed_at !== null && localDateKey(new Date(task.completed_at)) === dateKey;
+      if (completedToday || isTaskScheduledOn(task, dateKey)) completed.push(task);
+      continue;
+    }
+
+    const dueDate = taskDueDateKey(task);
+    if (dueDate !== null && dueDate < dateKey) overdue.push(task);
+    else if (isTaskActiveOn(task, dateKey) && task.priority === "high") highPriority.push(task);
+    else if (isTaskActiveOn(task, dateKey)) other.push(task);
+  }
+
+  return { overdue, highPriority, other, completed };
+}
+
 export function calculateTodoDashboardMetrics(tasks: TodoTask[], today: string): TodoDashboardMetrics {
   const start = weekStartKey(today);
   const end = weekEndKey(today);

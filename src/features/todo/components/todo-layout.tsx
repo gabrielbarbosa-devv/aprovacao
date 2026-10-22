@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft, BriefcaseBusiness, CalendarDays, CheckCircle2, CheckSquare2, CircleDot, Home, Layers3, ListTodo } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +25,8 @@ const mainNavigation: { view: TodoDashboardView; label: string; icon: typeof Hom
 ];
 
 function TodoSidebarContent({ email }: { email: string }) {
+  const pathname = usePathname();
+  const router = useRouter();
   const {
     lists, tasks, workspaces, loading, view, setView,
     selectedListId, selectedWorkspaceId, setSelectedListId, setSelectedWorkspaceId, setSelectedDate,
@@ -36,6 +39,7 @@ function TodoSidebarContent({ email }: { email: string }) {
     setSelectedWorkspaceId(null);
     setSelectedDate(null);
     setView(nextView);
+    router.push(nextView === "today" ? "/todo/today" : "/todo");
   };
 
   return (
@@ -55,7 +59,9 @@ function TodoSidebarContent({ email }: { email: string }) {
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
               {mainNavigation.map(({ view: itemView, label, icon: Icon }) => {
-                const active = view === itemView || (itemView === "all" && (view === "list" || view === "workspace"));
+                const active = itemView === "today"
+                  ? pathname === "/todo/today"
+                  : pathname !== "/todo/today" && (view === itemView || (itemView === "all" && (view === "list" || view === "workspace")));
                 return (
                   <SidebarMenuItem key={itemView}>
                     <SidebarMenuButton type="button" onClick={() => selectView(itemView)} isActive={active} aria-current={active ? "page" : undefined} tooltip={label} className="h-10 px-3 font-medium">
@@ -76,7 +82,7 @@ function TodoSidebarContent({ email }: { email: string }) {
                 const active = view === "list" && selectedListId === list.id;
                 return (
                   <SidebarMenuItem key={list.id}>
-                    <SidebarMenuButton type="button" onClick={() => { setSelectedWorkspaceId(null); setSelectedDate(null); setSelectedListId(list.id); setView("list"); }} isActive={active} aria-current={active ? "page" : undefined} tooltip={list.name} className="h-9 px-3">
+                    <SidebarMenuButton type="button" onClick={() => { setSelectedWorkspaceId(null); setSelectedDate(null); setSelectedListId(list.id); setView("list"); router.push("/todo"); }} isActive={active} aria-current={active ? "page" : undefined} tooltip={list.name} className="h-9 px-3">
                       <ListTodo aria-hidden="true" /><span>{list.name}</span><Badge variant="secondary" className="ml-auto h-5 min-w-6 justify-center px-1 text-[10px] group-data-[collapsible=icon]:hidden">{openCount(list.id)}</Badge>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -99,7 +105,7 @@ function TodoSidebarContent({ email }: { email: string }) {
                 const active = view === "workspace" && selectedWorkspaceId === workspace.id;
                 return (
                   <SidebarMenuItem key={workspace.id}>
-                    <SidebarMenuButton type="button" onClick={() => { setSelectedListId(null); setSelectedDate(null); setSelectedWorkspaceId(workspace.id); setView("workspace"); }} isActive={active} aria-current={active ? "page" : undefined} tooltip={workspace.name} className="h-9 px-3">
+                    <SidebarMenuButton type="button" onClick={() => { setSelectedListId(null); setSelectedDate(null); setSelectedWorkspaceId(workspace.id); setView("workspace"); router.push("/todo"); }} isActive={active} aria-current={active ? "page" : undefined} tooltip={workspace.name} className="h-9 px-3">
                       <BriefcaseBusiness aria-hidden="true" /><span>{workspace.name}</span><Badge variant="secondary" className="ml-auto h-5 min-w-6 justify-center px-1 text-[10px] group-data-[collapsible=icon]:hidden">{tasksInWorkspace(workspace.id)}</Badge>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
