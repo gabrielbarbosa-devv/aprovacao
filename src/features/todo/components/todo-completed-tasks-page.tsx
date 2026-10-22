@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, CircleHelp, LoaderCircle, RefreshCw, Trash2 } from "lucide-react";
+import { CheckCircle2, CircleHelp, LoaderCircle, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { todoTaskAction } from "@/features/todo/actions";
 import { TodoCompletedProductivityChart } from "@/features/todo/components/todo-completed-productivity-chart";
 import { TodoCompletedTaskRow } from "@/features/todo/components/todo-completed-task-row";
 import { TodoTaskDetailsSheet } from "@/features/todo/components/todo-task-details-sheet";
+import { TodoTaskFormDialog } from "@/features/todo/components/todo-task-form-dialog";
 import { calculateTodoCompletedMetrics, filterCompletedTasks, formatCompletedGroupLabel, getTodoCompletedRange, groupCompletedTasks, type TodoCompletedPeriod } from "@/features/todo/domain/completed-tasks";
 import { localDateKey } from "@/features/todo/domain/dashboard";
 import { useTodoDashboardData } from "@/features/todo/hooks/todo-dashboard-context";
@@ -48,6 +49,7 @@ export function TodoCompletedTasksPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<TodoTask | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => setToday(localDateKey(new Date())));
@@ -133,7 +135,7 @@ export function TodoCompletedTasksPage() {
       <section className="min-w-0 space-y-5">
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Tarefas / Concluídas</p><h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Tarefas concluídas</h1><p className="mt-2 text-sm text-muted-foreground">Tudo o que você já realizou.</p></div>
-          <Button variant="outline" size="icon" aria-label="Atualizar histórico" title="Atualizar" disabled={refreshing} onClick={() => void refreshAll()}><RefreshCw className={cn("size-4", refreshing && "animate-spin")} /></Button>
+          <div className="flex gap-2"><Button variant="outline" size="icon" aria-label="Atualizar histórico" title="Atualizar" disabled={refreshing} onClick={() => void refreshAll()}><RefreshCw className={cn("size-4", refreshing && "animate-spin")} /></Button><Button onClick={() => setFormOpen(true)}><Plus aria-hidden="true" />Nova tarefa</Button></div>
         </header>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -169,6 +171,7 @@ export function TodoCompletedTasksPage() {
     </main>
 
     <TodoTaskDetailsSheet task={activeTask} list={activeList} workspace={activeWorkspace} onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }} onToggleComplete={(task) => reopenTask(task)} saving={activeTask ? savingTaskIds.has(activeTask.id) : false} />
+    <TodoTaskFormDialog open={formOpen} onOpenChange={setFormOpen} lists={lists} workspaces={workspaces} initialDate={today} onCreated={refreshAll} />
     <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open && !deleting) setDeleteTarget(null); }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Excluir esta tarefa?</AlertDialogTitle><AlertDialogDescription>A tarefa será removida das suas listas. O histórico de atividade é preservado conforme as regras do To-Do.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel><AlertDialogAction variant="destructive" disabled={deleting} onClick={(event) => { event.preventDefault(); void deleteTask(); }}>{deleting ? <><LoaderCircle className="size-4 animate-spin" />Excluindo…</> : <><Trash2 className="size-4" />Excluir tarefa</>}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
   </>;
 }

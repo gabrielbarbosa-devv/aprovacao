@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Circle, Clock3, Ellipsis, ListFilter, LoaderCircle, Search, SquareCheckBig } from "lucide-react";
+import { CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Circle, Clock3, Ellipsis, ListFilter, LoaderCircle, Plus, Search, SquareCheckBig } from "lucide-react";
 import { toast } from "sonner";
 import { todoTaskAction } from "@/features/todo/actions";
 import { TodoTaskDetailsSheet } from "@/features/todo/components/todo-task-details-sheet";
+import { TodoTaskFormDialog } from "@/features/todo/components/todo-task-form-dialog";
 import { getTasksForDay, groupTodoTasksForDay, localDateFromKey, localDateKey, taskDueDateKey } from "@/features/todo/domain/dashboard";
 import { useTodoDashboardData } from "@/features/todo/hooks/todo-dashboard-context";
 import type { TodoTask } from "@/features/todo/domain/types";
@@ -52,6 +53,7 @@ export function TodoTodayPage() {
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
   const [savingTaskIds, setSavingTaskIds] = useState<Set<string>>(() => new Set());
   const [optimisticTasks, setOptimisticTasks] = useState<Map<string, TodoTask>>(() => new Map());
 
@@ -152,7 +154,7 @@ export function TodoTodayPage() {
             <Button size="sm" variant={selectedListId === null ? "default" : "outline"} onClick={() => setSelectedListId(null)}>Todas <Badge variant={selectedListId === null ? "secondary" : "outline"} className="ml-1 h-5 px-1.5">{allDayTasks.length}</Badge></Button>
             {lists.map((list) => <Button key={list.id} size="sm" variant={selectedListId === list.id ? "default" : "outline"} onClick={() => setSelectedListId(list.id)} className="max-w-40"><span className="truncate">{list.name}</span><Badge variant={selectedListId === list.id ? "secondary" : "outline"} className="ml-1 h-5 px-1.5">{allDayTasks.filter((task) => task.list_id === list.id).length}</Badge></Button>)}
           </div>
-          <div className="flex min-w-0 gap-2"><div className="relative min-w-0 flex-1 lg:w-56 lg:flex-none"><Search aria-hidden="true" className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar tarefas" aria-label="Buscar tarefas do dia" className="pl-9" /></div><Button variant="outline" size="icon" aria-label="Atualizar tarefas" title="Atualizar" disabled={refreshing} onClick={() => void refreshAll()}><LoaderCircle className={cn("size-4", refreshing && "animate-spin")} /></Button></div>
+          <div className="flex min-w-0 gap-2"><div className="relative min-w-0 flex-1 lg:w-56 lg:flex-none"><Search aria-hidden="true" className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar tarefas" aria-label="Buscar tarefas do dia" className="pl-9" /></div><Button variant="outline" size="icon" aria-label="Atualizar tarefas" title="Atualizar" disabled={refreshing} onClick={() => void refreshAll()}><LoaderCircle className={cn("size-4", refreshing && "animate-spin")} /></Button><Button onClick={() => setFormOpen(true)}><Plus aria-hidden="true" />Nova tarefa</Button></div>
         </div>
 
         <Card className="shadow-none">
@@ -179,6 +181,7 @@ export function TodoTodayPage() {
       </aside>
     </main>
     <TodoTaskDetailsSheet task={activeTask} list={activeList} workspace={activeWorkspace} onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }} onToggleComplete={(task) => updateTask(task, { status: task.status === "done" ? "todo" : "done" })} saving={activeTask ? savingTaskIds.has(activeTask.id) : false} />
+    <TodoTaskFormDialog open={formOpen} onOpenChange={setFormOpen} lists={lists} workspaces={workspaces} initialDate={dayKey} initialListId={selectedListId ?? undefined} onCreated={refreshAll} />
   </>;
 }
 

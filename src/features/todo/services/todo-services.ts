@@ -5,7 +5,7 @@ import type { Tables } from "@/lib/supabase/database.types";
 import type {
   TodoLabelInput, TodoLabelUpdate, TodoListInput, TodoListUpdate,
   TodoSubtaskInput, TodoSubtaskUpdate, TodoTaskInput, TodoTaskLabelInput,
-  TodoTaskUpdate, TodoWorkspaceInput, TodoWorkspaceUpdate,
+  TodoTaskUpdate, TodoTaskBundle, TodoWorkspaceInput, TodoWorkspaceUpdate,
 } from "@/features/todo/domain/schemas";
 
 async function context() {
@@ -84,6 +84,24 @@ export const todoWorkspacesService = {
 };
 
 export const todoTasksService = {
+  async saveBundle(input: TodoTaskBundle) {
+    const { data, error } = await (await context()).supabase.rpc("save_todo_task_bundle", {
+      p_task_id: input.id ?? null,
+      p_list_id: input.listId,
+      p_workspace_id: input.workspaceId ?? null,
+      p_title: input.title,
+      p_description: input.description ?? null,
+      p_priority: input.priority,
+      p_starts_on: input.startsOn,
+      p_due_on: input.dueOn,
+      p_due_at: input.dueAt,
+      p_label_ids: input.labelIds,
+      p_new_labels: input.newLabels,
+      p_subtasks: input.subtasks.map((subtask) => ({ id: subtask.id, title: subtask.title, is_completed: subtask.isCompleted })),
+    });
+    throwOnError(error);
+    return data;
+  },
   async list(options?: { listId?: string; workspaceId?: string; status?: TodoTaskInput["status"]; includeDeleted?: boolean }) {
     const { user, supabase } = await context();
     const pageSize = 500;

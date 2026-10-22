@@ -449,6 +449,7 @@ export type Database = {
       initialize_todo_lists: { Args: Record<PropertyKey, never>; Returns: Database["public"]["Tables"]["todo_lists"]["Row"][] }
       delete_todo_list_with_transfer: { Args: { p_list_id: string; p_target_list_id?: string | null }; Returns: number }
       delete_todo_workspace_with_task_policy: { Args: { p_workspace_id: string; p_task_policy: string }; Returns: number }
+      save_todo_task_bundle: { Args: { p_task_id: string | null; p_list_id: string; p_workspace_id: string | null; p_title: string; p_description: string | null; p_priority: string; p_starts_on: string; p_due_on: string | null; p_due_at: string | null; p_label_ids: string[]; p_new_labels: string[]; p_subtasks: Json }; Returns: string }
     }
     Enums: {
       [_ in never]: never

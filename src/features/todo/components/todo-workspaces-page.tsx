@@ -8,7 +8,9 @@ import { todoWorkspaceAction } from "@/features/todo/actions";
 import { TodoWorkspaceDeleteDialog, type WorkspaceTaskPolicy } from "@/features/todo/components/todo-workspace-delete-dialog";
 import { TodoWorkspaceFormDialog } from "@/features/todo/components/todo-workspace-form-dialog";
 import { TodoWorkspaceIcon } from "@/features/todo/components/todo-workspace-icon";
+import { TodoTaskFormDialog } from "@/features/todo/components/todo-task-form-dialog";
 import { activityLabel, filterWorkspacesBySearch, summarizeWorkspaceTasks } from "@/features/todo/domain/workspaces";
+import { localDateKey } from "@/features/todo/domain/dashboard";
 import { useTodoDashboardData } from "@/features/todo/hooks/todo-dashboard-context";
 import { useTodoRecentActivity } from "@/features/todo/hooks/use-todo-data";
 import type { TodoWorkspace } from "@/features/todo/domain/types";
@@ -33,7 +35,7 @@ function relativeTime(date: string) {
 }
 
 export function TodoWorkspacesPage() {
-  const { workspaces, tasks, loading, error, refreshing, refreshAll } = useTodoDashboardData();
+  const { lists, workspaces, tasks, loading, error, refreshing, refreshAll } = useTodoDashboardData();
   const [filter, setFilter] = useState<WorkspaceFilter>("all");
   const [search, setSearch] = useState("");
   const [formOpen, setFormOpen] = useState(false);
@@ -41,6 +43,7 @@ export function TodoWorkspacesPage() {
   const [deletingWorkspace, setDeletingWorkspace] = useState<TodoWorkspace | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [taskFormOpen, setTaskFormOpen] = useState(false);
 
   const activityResource = useTodoRecentActivity();
   const taskById = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks]);
@@ -89,7 +92,7 @@ export function TodoWorkspacesPage() {
       <section className="min-w-0 space-y-5">
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div><p className="text-xs font-semibold uppercase tracking-wider text-primary">Tarefas / Workspaces</p><h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Espaços de trabalho</h1><p className="mt-2 text-sm text-muted-foreground">Organize seus projetos e acompanhe o progresso das tarefas vinculadas.</p></div>
-          <Button onClick={() => { setEditingWorkspace(null); setFormOpen(true); }}><Plus aria-hidden="true" /> Novo workspace</Button>
+          <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => setTaskFormOpen(true)}><Plus aria-hidden="true" /> Nova tarefa</Button><Button onClick={() => { setEditingWorkspace(null); setFormOpen(true); }}><Plus aria-hidden="true" /> Novo workspace</Button></div>
         </header>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -134,6 +137,7 @@ export function TodoWorkspacesPage() {
       </aside>
     </main>
     <TodoWorkspaceFormDialog key={editingWorkspace?.id ?? "new-workspace"} open={formOpen} onOpenChange={(open) => { setFormOpen(open); if (!open) setEditingWorkspace(null); }} workspace={editingWorkspace} onSaved={refreshAll} />
+    <TodoTaskFormDialog open={taskFormOpen} onOpenChange={setTaskFormOpen} lists={lists} workspaces={workspaces} initialDate={localDateKey(new Date())} onCreated={refreshAll} />
     <TodoWorkspaceDeleteDialog workspace={deletingWorkspace} linkedTaskCount={deletingWorkspace ? tasks.filter((task) => task.workspace_id === deletingWorkspace.id).length : 0} open={Boolean(deletingWorkspace)} busy={deleteBusy} onOpenChange={(open) => { if (!open) setDeletingWorkspace(null); }} onConfirm={(policy) => void deleteWorkspace(policy)} />
   </>;
 }

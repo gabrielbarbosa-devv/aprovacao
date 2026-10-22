@@ -35,7 +35,9 @@ describe("To-Do additive schema and RLS", () => {
     await db.exec(transferMigration);
     const workspaceDeleteMigration = await readFile(resolve(process.cwd(), "supabase/migrations/20261022200431_delete_todo_workspace_with_task_policy.sql"), "utf8");
     await db.exec(workspaceDeleteMigration);
-  });
+    const taskBundleMigration = await readFile(resolve(process.cwd(), "supabase/migrations/20261022201502_save_todo_task_bundle.sql"), "utf8");
+    await db.exec(taskBundleMigration);
+  }, 30000);
 
   afterAll(async () => { await db.close(); });
 
@@ -148,5 +150,32 @@ describe("To-Do additive schema and RLS", () => {
     expect(deletedTasks[0].deleted_at).not.toBeNull();
     await expectSqlFailure(`select public.delete_todo_workspace_with_task_policy('${keepWorkspace}','keep_tasks')`);
     await db.exec("reset role");
+  });
+
+  it("saves a task with labels and ordered subtasks atomically and rejects cross-user relations", async () => {
+    await db.exec(`set request.jwt.claim.sub='${userA}'; set role authenticated;`);
+    const listId = (await rows<{ id: string }>(`select id from public.todo_lists where user_id='${userA}' and slug='pessoal'`))[0].id;
+    const workspaceId = (await rows<{ id: string }>(`insert into public.todo_workspaces(user_id,name) values ('${userA}','Bundle') returning id`))[0].id;
+    const existingLabelId = (await rows<{ id: string }>(`insert into public.todo_labels(user_id,name) values ('${userA}','Existente') returning id`))[0].id;
+    const newTaskId = (await rows<{ save_todo_task_bundle: string }>(`select public.save_todo_task_bundle(null,'${listId}','${workspaceId}','Tarefa bundle','Descrição','high',current_date,current_date+1,null,array['${existingLabelId}'::uuid],array['Nova etiqueta'],'[{"title":"Etapa um","is_completed":true},{"title":"Etapa dois","is_completed":false}]'::jsonb)`))[0].save_todo_task_bundle;
+    expect(await rows<{ title: string; priority: string; workspace_id: string }>(`select title,priority,workspace_id from public.todo_tasks where id='${newTaskId}'`)).toEqual([{ title: "Tarefa bundle", priority: "high", workspace_id: workspaceId }]);
+    expect(await rows<{ title: string; is_completed: boolean; position: number }>(`select title,is_completed,position from public.todo_subtasks where task_id='${newTaskId}' order by position`)).toEqual([
+      { title: "Etapa um", is_completed: true, position: 0 },
+      { title: "Etapa dois", is_completed: false, position: 1 },
+    ]);
+    expect(await rows<{ name: string }>(`select l.name from public.todo_labels l join public.todo_task_labels tl on tl.label_id=l.id where tl.task_id='${newTaskId}' order by l.name`)).toEqual([{ name: "Existente" }, { name: "Nova etiqueta" }]);
+
+    await expectSqlFailure(`select public.save_todo_task_bundle(null,'${listId}',null,'Não deve persistir',null,'low',current_date,null,null,array[]::uuid[],array[]::text[],'[{"title":""}]'::jsonb)`);
+    expect(await rows<{ id: string }>(`select id from public.todo_tasks where user_id='${userA}' and title='Não deve persistir'`)).toHaveLength(0);
+
+    const updatedSubtaskId = (await rows<{ id: string }>(`select id from public.todo_subtasks where task_id='${newTaskId}' and title='Etapa um'`))[0].id;
+    await db.exec(`select public.save_todo_task_bundle('${newTaskId}','${listId}','${workspaceId}','Tarefa editada',null,'medium',current_date,current_date+2,null,array[]::uuid[],array[]::text[],'[{"id":"${updatedSubtaskId}","title":"Etapa renomeada","is_completed":false}]'::jsonb);`);
+    expect(await rows<{ title: string }>(`select title from public.todo_subtasks where task_id='${newTaskId}'`)).toEqual([{ title: "Etapa renomeada" }]);
+    expect(await rows<{ task_id: string }>(`select task_id from public.todo_task_labels where task_id='${newTaskId}'`)).toHaveLength(0);
+
+    await db.exec(`set request.jwt.claim.sub='${userB}';`);
+    await expectSqlFailure(`select public.save_todo_task_bundle('${newTaskId}','${listId}',null,'Tentativa cruzada',null,'low',current_date,null,null,array[]::uuid[],array[]::text[],'[]'::jsonb)`);
+    await db.exec("reset role");
+    expect(await rows<{ title: string }>(`select title from public.todo_tasks where id='${newTaskId}'`)).toEqual([{ title: "Tarefa editada" }]);
   });
 });

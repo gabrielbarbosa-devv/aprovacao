@@ -5,7 +5,7 @@ import { unstable_rethrow } from "next/navigation";
 import {
   todoIdSchema, todoLabelInputSchema, todoLabelUpdateSchema, todoListInputSchema, todoListUpdateSchema,
   todoSubtaskInputSchema, todoSubtaskUpdateSchema, todoTaskIdSchema, todoTaskInputSchema,
-  todoTaskLabelInputSchema, todoTaskUpdateSchema, todoWorkspaceInputSchema, todoWorkspaceUpdateSchema,
+  todoTaskBundleSchema, todoTaskLabelInputSchema, todoTaskUpdateSchema, todoWorkspaceInputSchema, todoWorkspaceUpdateSchema,
 } from "@/features/todo/domain/schemas";
 import {
   todoActivityService, todoLabelsService, todoListsService, todoSubtasksService,
@@ -109,6 +109,11 @@ export async function todoTaskAction(input: unknown) {
   if (value.operation === "update") { const { operation, ...payload } = value; void operation; return run(() => todoTasksService.update(payload)); }
   if (value.operation === "restore") return run(() => todoTasksService.restore(value.id));
   return run(async () => { await todoTasksService.softDelete(value.id); return null; });
+}
+export async function saveTodoTaskBundleAction(input: unknown) {
+  const parsed = parse(todoTaskBundleSchema, input);
+  if (!parsed.ok) return parsed.result;
+  return run(() => todoTasksService.saveBundle(parsed.value));
 }
 export async function todoSubtaskAction(input: unknown) {
   const schema = z.discriminatedUnion("operation", [
