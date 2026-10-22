@@ -132,7 +132,7 @@ function TodoSidebarContent({ email }: { email: string }) {
 
 export function TodoLayout({ children, email }: { children: ReactNode; email: string }) {
   return (
-    <TodoDashboardProvider email={email}>
+    <TodoDashboardProvider>
       <TooltipProvider>
         <SidebarProvider>
           <ShadcnSidebar collapsible="icon" className="border-sidebar-border">

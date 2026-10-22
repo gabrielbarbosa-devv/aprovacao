@@ -7,7 +7,6 @@ import type { TodoList, TodoTask, TodoWorkspace } from "@/features/todo/domain/t
 export type TodoDashboardView = "overview" | "today" | "all" | "completed" | "lists" | "workspaces" | "list" | "workspace";
 
 type TodoDashboardContextValue = {
-  email: string;
   lists: TodoList[];
   tasks: TodoTask[];
   workspaces: TodoWorkspace[];
@@ -27,7 +26,7 @@ type TodoDashboardContextValue = {
 
 const TodoDashboardContext = createContext<TodoDashboardContextValue | null>(null);
 
-export function TodoDashboardProvider({ children, email = "" }: { children: ReactNode; email?: string }) {
+export function TodoDashboardProvider({ children }: { children: ReactNode }) {
   const [view, setView] = useState<TodoDashboardView>("overview");
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(null);
@@ -44,7 +43,6 @@ export function TodoDashboardProvider({ children, email = "" }: { children: Reac
   }, [refreshLists, refreshTasks, refreshWorkspaces]);
 
   const value = useMemo<TodoDashboardContextValue>(() => ({
-    email,
     lists: listsResource.data ?? [],
     tasks: tasksResource.data ?? [],
     workspaces: workspacesResource.data ?? [],
@@ -60,7 +58,7 @@ export function TodoDashboardProvider({ children, email = "" }: { children: Reac
     setSelectedWorkspaceId,
     selectedDate,
     setSelectedDate,
-  }), [email, listsResource.data, listsResource.loading, listsResource.error, tasksResource.data, tasksResource.loading, tasksResource.error, workspacesResource.data, workspacesResource.loading, workspacesResource.error, refreshAll, view, selectedListId, selectedWorkspaceId, selectedDate]);
+  }), [listsResource.data, listsResource.loading, listsResource.error, tasksResource.data, tasksResource.loading, tasksResource.error, workspacesResource.data, workspacesResource.loading, workspacesResource.error, refreshAll, view, selectedListId, selectedWorkspaceId, selectedDate]);
 
   return <TodoDashboardContext.Provider value={value}>{children}</TodoDashboardContext.Provider>;
 }

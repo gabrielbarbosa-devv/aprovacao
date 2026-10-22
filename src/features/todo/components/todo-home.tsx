@@ -63,7 +63,7 @@ function DashboardSkeleton() {
 
 export function TodoHome() {
   const {
-    email, lists, tasks, workspaces, loading, refreshing, error, refreshAll, view, setView,
+    lists, tasks, workspaces, loading, refreshing, error, refreshAll, view, setView,
     selectedListId, setSelectedListId, selectedWorkspaceId, setSelectedWorkspaceId,
     selectedDate, setSelectedDate,
   } = useTodoDashboardData();
@@ -185,7 +185,7 @@ export function TodoHome() {
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Minhas tarefas</p>
               <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Organize seu dia com clareza</h1>
-              <p className="mt-2 text-sm text-muted-foreground">{greeting}{email ? `, ${email.split("@")[0]?.split(/[._-]/)[0]}` : ""}. {formatDateLong(today)}.</p>
+              <p className="mt-2 text-sm text-muted-foreground">{greeting}. {formatDateLong(today)}.</p>
               <p className="mt-1 text-sm text-muted-foreground">Planeje, foque e avance nos seus objetivos.</p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -243,7 +243,7 @@ export function TodoHome() {
           <Card className="shadow-none">
             <CardHeader className="space-y-4 p-4 pb-2">
               <div className="flex items-center justify-between gap-2"><div><CardTitle className="text-base">Calendário</CardTitle><CardDescription className="mt-1">Datas com tarefas</CardDescription></div><Button variant="ghost" size="sm" onClick={() => today && chooseDate(localDateFromKey(today))}>Hoje</Button></div>
-              <div className="flex items-center justify-between"><p className="text-sm font-semibold capitalize">{new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(monthStart)}</p><div className="flex items-center"><Button variant="ghost" size="icon" className="size-8" aria-label="Mês anterior" onClick={() => setMonth((current) => current ? moveMonth(current, -1) : current)}><ChevronLeft className="size-4" /></Button><Button variant="ghost" size="icon" className="size-8" aria-label="Próximo mês" onClick={() => setMonth((current) => current ? moveMonth(current, 1) : current)}><ChevronRight className="size-4" /></Button></div></div>
+              <div className="flex items-center justify-between"><p className="text-sm font-semibold">{new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(monthStart)}</p><div className="flex items-center"><Button variant="ghost" size="icon" className="size-8" aria-label="Mês anterior" onClick={() => setMonth((current) => current ? moveMonth(current, -1) : current)}><ChevronLeft className="size-4" /></Button><Button variant="ghost" size="icon" className="size-8" aria-label="Próximo mês" onClick={() => setMonth((current) => current ? moveMonth(current, 1) : current)}><ChevronRight className="size-4" /></Button></div></div>
             </CardHeader>
             <CardContent className="p-4 pt-1">
               <div className="grid grid-cols-7 gap-1 text-center">{weekDays.map((day) => <span key={day} className="py-1 text-[10px] font-medium text-muted-foreground">{day}</span>)}
