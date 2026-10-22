@@ -1,6 +1,7 @@
 import "server-only";
 import { requireUser } from "@/lib/auth/require-user";
 import type { TablesUpdate } from "@/lib/supabase/database.types";
+import type { Tables } from "@/lib/supabase/database.types";
 import type {
   TodoLabelInput, TodoLabelUpdate, TodoListInput, TodoListUpdate,
   TodoSubtaskInput, TodoSubtaskUpdate, TodoTaskInput, TodoTaskLabelInput,
@@ -77,14 +78,22 @@ export const todoWorkspacesService = {
 export const todoTasksService = {
   async list(options?: { listId?: string; workspaceId?: string; status?: TodoTaskInput["status"]; includeDeleted?: boolean }) {
     const { user, supabase } = await context();
-    let query = supabase.from("todo_tasks").select("*").eq("user_id", user.id).order("position").order("created_at");
-    if (!options?.includeDeleted) query = query.is("deleted_at", null);
-    if (options?.listId) query = query.eq("list_id", options.listId);
-    if (options?.workspaceId) query = query.eq("workspace_id", options.workspaceId);
-    if (options?.status) query = query.eq("status", options.status);
-    const { data, error } = await query;
-    throwOnError(error);
-    return data ?? [];
+    const pageSize = 500;
+    const allRows: Tables<"todo_tasks">[] = [];
+    let offset = 0;
+    while (true) {
+      let query = supabase.from("todo_tasks").select("*").eq("user_id", user.id).order("position").order("created_at").order("id").range(offset, offset + pageSize - 1);
+      if (!options?.includeDeleted) query = query.is("deleted_at", null);
+      if (options?.listId) query = query.eq("list_id", options.listId);
+      if (options?.workspaceId) query = query.eq("workspace_id", options.workspaceId);
+      if (options?.status) query = query.eq("status", options.status);
+      const { data, error } = await query;
+      throwOnError(error);
+      const page = data ?? [];
+      allRows.push(...page);
+      if (page.length < pageSize) return allRows;
+      offset += pageSize;
+    }
   },
   async create(input: TodoTaskInput) {
     const { user, supabase } = await context();

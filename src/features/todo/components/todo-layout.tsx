@@ -39,7 +39,7 @@ function TodoSidebarContent({ email }: { email: string }) {
     setSelectedWorkspaceId(null);
     setSelectedDate(null);
     setView(nextView);
-    router.push(nextView === "today" ? "/todo/today" : "/todo");
+    router.push(nextView === "today" ? "/todo/today" : nextView === "all" ? "/todo/all" : "/todo");
   };
 
   return (
@@ -61,7 +61,9 @@ function TodoSidebarContent({ email }: { email: string }) {
               {mainNavigation.map(({ view: itemView, label, icon: Icon }) => {
                 const active = itemView === "today"
                   ? pathname === "/todo/today"
-                  : pathname !== "/todo/today" && (view === itemView || (itemView === "all" && (view === "list" || view === "workspace")));
+                  : itemView === "all"
+                    ? pathname === "/todo/all"
+                    : pathname !== "/todo/today" && pathname !== "/todo/all" && view === itemView;
                 return (
                   <SidebarMenuItem key={itemView}>
                     <SidebarMenuButton type="button" onClick={() => selectView(itemView)} isActive={active} aria-current={active ? "page" : undefined} tooltip={label} className="h-10 px-3 font-medium">
