@@ -210,7 +210,9 @@ export function TodoTaskDetailsSheet({ task, list, workspace, lists, workspaces,
     try {
       const result = await todoTaskAction({ operation: "soft_delete", id: details.task.id });
       if (!result.ok) { toast.error(result.message); return; }
-      setConfirmDelete(false); setDirty(false); toast.success("Tarefa movida para excluídas.", { action: { label: "Desfazer", onClick: () => { void restoreDeletedTask(details.task.id); } } }); await onSaved(); onOpenChange(false);
+      setConfirmDelete(false); setDirty(false); toast.success("Tarefa movida para excluídas.", { action: { label: "Desfazer", onClick: () => { void restoreDeletedTask(details.task.id); } } });
+      try { await onSaved(); } catch { toast.warning("A tarefa foi excluída, mas algumas listas ainda não atualizaram."); }
+      onOpenChange(false);
     } catch { toast.error("Não foi possível excluir a tarefa. Tente novamente."); }
     finally { setDeleting(false); }
   }
