@@ -37,6 +37,8 @@ describe("To-Do additive schema and RLS", () => {
     await db.exec(workspaceDeleteMigration);
     const taskBundleMigration = await readFile(resolve(process.cwd(), "supabase/migrations/20261022201502_save_todo_task_bundle.sql"), "utf8");
     await db.exec(taskBundleMigration);
+    const detailsBundleMigration = await readFile(resolve(process.cwd(), "supabase/migrations/20261022202836_todo_task_details_bundle.sql"), "utf8");
+    await db.exec(detailsBundleMigration);
   }, 30000);
 
   afterAll(async () => { await db.close(); });
@@ -177,5 +179,20 @@ describe("To-Do additive schema and RLS", () => {
     await expectSqlFailure(`select public.save_todo_task_bundle('${newTaskId}','${listId}',null,'Tentativa cruzada',null,'low',current_date,null,null,array[]::uuid[],array[]::text[],'[]'::jsonb)`);
     await db.exec("reset role");
     expect(await rows<{ title: string }>(`select title from public.todo_tasks where id='${newTaskId}'`)).toEqual([{ title: "Tarefa editada" }]);
+  });
+
+  it("saves task details and status atomically and records real subtask additions", async () => {
+    await db.exec(`set request.jwt.claim.sub='${userA}'; set role authenticated;`);
+    const listId = (await rows<{ id: string }>(`select id from public.todo_lists where user_id='${userA}' and slug='pessoal'`))[0].id;
+    const taskId = (await rows<{ id: string }>(`insert into public.todo_tasks(user_id,list_id,title) values ('${userA}','${listId}','Detalhes atômicos') returning id`))[0].id;
+    const completedId = (await rows<{ save_todo_task_details_bundle: string }>(`select public.save_todo_task_details_bundle('${taskId}','${listId}',null,'Detalhes atualizados','Anotações','high',current_date,current_date+1,null,array[]::uuid[],array[]::text[],'[{"title":"Subtarefa real","is_completed":false}]'::jsonb,'done')`))[0].save_todo_task_details_bundle;
+    expect(completedId).toBe(taskId);
+    expect(await rows<{ title: string; status: string; completed_at: string | null }>(`select title,status,completed_at from public.todo_tasks where id='${taskId}'`)).toMatchObject([{ title: "Detalhes atualizados", status: "done" }]);
+    expect((await rows<{ completed_at: string | null }>(`select completed_at from public.todo_tasks where id='${taskId}'`))[0].completed_at).not.toBeNull();
+    expect(await rows<{ action: string; metadata: { entity?: string; change?: string } }>(`select action,metadata from public.todo_activity_logs where task_id='${taskId}' and metadata->>'entity'='subtask'`)).toEqual([{ action: "updated", metadata: { entity: "subtask", change: "added", title: "Subtarefa real" } }]);
+    await expectSqlFailure(`select public.save_todo_task_details_bundle('${taskId}','${listId}',null,'Não salvar',null,'low',current_date,null,null,array[]::uuid[],array[]::text[],'[{"title":""}]'::jsonb,'todo')`);
+    expect(await rows<{ title: string; status: string }>(`select title,status from public.todo_tasks where id='${taskId}'`)).toEqual([{ title: "Detalhes atualizados", status: "done" }]);
+    await db.exec(`select public.save_todo_task_details_bundle('${taskId}','${listId}',null,'Detalhes atualizados','Anotações','high',current_date,current_date+1,null,array[]::uuid[],array[]::text[],'[{"id":"${(await rows<{ id: string }>(`select id from public.todo_subtasks where task_id='${taskId}'`))[0].id}","title":"Subtarefa real","is_completed":true}]'::jsonb,'todo'); reset role;`);
+    expect(await rows<{ status: string; completed_at: string | null }>(`select status,completed_at from public.todo_tasks where id='${taskId}'`)).toEqual([{ status: "todo", completed_at: null }]);
   });
 });

@@ -271,7 +271,7 @@ export function TodoHome() {
       </main>
 
       <TodoTaskFormDialog open={formOpen} onOpenChange={setFormOpen} lists={lists} workspaces={workspaces} initialDate={selectedDate ?? today} onCreated={refreshAll} />
-      <TodoTaskDetailsSheet task={activeTask} list={selectedList} workspace={selectedWorkspace} onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }} onToggleComplete={toggleComplete} saving={activeTask ? savingTaskIds.has(activeTask.id) : false} />
+      <TodoTaskDetailsSheet task={activeTask} list={selectedList} workspace={selectedWorkspace} lists={lists} workspaces={workspaces} onSelectTask={setSelectedTaskId} onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }} onSaved={refreshAll} />
     </>
   );
 }

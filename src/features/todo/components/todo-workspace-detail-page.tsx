@@ -150,7 +150,7 @@ export function TodoWorkspaceDetailPage({ workspaceId }: TodoWorkspaceDetailPage
 
     <TodoTaskFormDialog key={`${workspace.id}-${taskForm?.id ?? "new"}`} open={formOpen} onOpenChange={(open) => { setFormOpen(open); if (!open) setTaskForm(null); }} lists={lists} workspaces={workspaces} initialDate={today} initialWorkspaceId={workspace.id} initialTask={taskForm} onCreated={refreshAll} />
     <TodoWorkspaceFormDialog key={workspace.id} open={editWorkspaceOpen} onOpenChange={setEditWorkspaceOpen} workspace={workspace} onSaved={refreshAll} />
-    <TodoTaskDetailsSheet task={activeTask} list={lists.find((item) => item.id === activeTask?.list_id)} workspace={workspace} onOpenChange={(open) => { if (!open) setActiveTaskId(null); }} onToggleComplete={(task) => mutateTask(task, { status: task.status === "done" ? "todo" : "done" })} saving={activeTask ? savingTaskId === activeTask.id : false} />
+    <TodoTaskDetailsSheet task={activeTask} list={lists.find((item) => item.id === activeTask?.list_id)} workspace={workspace} lists={lists} workspaces={workspaces} onSelectTask={setActiveTaskId} onOpenChange={(open) => { if (!open) setActiveTaskId(null); }} onSaved={refreshAll} />
     <TodoWorkspaceDeleteDialog workspace={workspace} linkedTaskCount={storedTasksResource.data?.length ?? 0} open={deleteWorkspaceOpen} busy={deleteBusy || storedTasksResource.loading} onOpenChange={setDeleteWorkspaceOpen} onConfirm={(policy) => void deleteWorkspace(policy)} />
   </>;
 }

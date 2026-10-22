@@ -39,6 +39,10 @@ export const todoTaskBundleSchema = z.object({
   if (input.dueOn && input.dueOn < input.startsOn) context.addIssue({ code: "custom", path: ["dueOn"], message: "O vencimento não pode ser anterior à data de início." });
   if (input.dueAt && !input.dueOn) context.addIssue({ code: "custom", path: ["dueAt"], message: "Selecione uma data de vencimento para definir um horário." });
 });
+export const todoTaskDetailsSchema = todoTaskBundleSchema.safeExtend({
+  id: uuid,
+  status: z.enum(["todo", "in_progress", "done"]),
+});
 export const todoSubtaskInputSchema = z.object({ taskId: uuid, title: text(240), position: z.number().int().min(0).optional() }).strict();
 export const todoSubtaskUpdateSchema = z.object({ id: uuid, title: text(240).optional(), isCompleted: z.boolean().optional(), position: z.number().int().min(0).optional() }).strict();
 export const todoLabelInputSchema = z.object({ name: text(60), color: text(32).optional() }).strict();
@@ -54,6 +58,7 @@ export type TodoWorkspaceUpdate = z.infer<typeof todoWorkspaceUpdateSchema>;
 export type TodoTaskInput = z.infer<typeof todoTaskInputSchema>;
 export type TodoTaskUpdate = z.infer<typeof todoTaskUpdateSchema>;
 export type TodoTaskBundle = z.infer<typeof todoTaskBundleSchema>;
+export type TodoTaskDetails = z.infer<typeof todoTaskDetailsSchema>;
 export type TodoSubtaskInput = z.infer<typeof todoSubtaskInputSchema>;
 export type TodoSubtaskUpdate = z.infer<typeof todoSubtaskUpdateSchema>;
 export type TodoLabelInput = z.infer<typeof todoLabelInputSchema>;

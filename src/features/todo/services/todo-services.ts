@@ -5,7 +5,7 @@ import type { Tables } from "@/lib/supabase/database.types";
 import type {
   TodoLabelInput, TodoLabelUpdate, TodoListInput, TodoListUpdate,
   TodoSubtaskInput, TodoSubtaskUpdate, TodoTaskInput, TodoTaskLabelInput,
-  TodoTaskUpdate, TodoTaskBundle, TodoWorkspaceInput, TodoWorkspaceUpdate,
+  TodoTaskUpdate, TodoTaskBundle, TodoTaskDetails, TodoWorkspaceInput, TodoWorkspaceUpdate,
 } from "@/features/todo/domain/schemas";
 
 async function context() {
@@ -84,6 +84,22 @@ export const todoWorkspacesService = {
 };
 
 export const todoTasksService = {
+  async getDetails(taskId: string) {
+    const { user, supabase } = await context();
+    const { data: task, error } = await supabase.from("todo_tasks").select("*").eq("id", taskId).eq("user_id", user.id).is("deleted_at", null).maybeSingle();
+    throwOnError(error);
+    if (!task) return null;
+    const [subtasks, taskLabels, labels, activity, list, workspace] = await Promise.all([
+      supabase.from("todo_subtasks").select("*").eq("user_id", user.id).eq("task_id", taskId).order("position"),
+      supabase.from("todo_task_labels").select("*").eq("user_id", user.id).eq("task_id", taskId),
+      supabase.from("todo_labels").select("*").eq("user_id", user.id).order("name"),
+      supabase.from("todo_activity_logs").select("*").eq("user_id", user.id).eq("task_id", taskId).order("created_at", { ascending: false }).limit(100),
+      supabase.from("todo_lists").select("*").eq("id", task.list_id).eq("user_id", user.id).maybeSingle(),
+      task.workspace_id ? supabase.from("todo_workspaces").select("*").eq("id", task.workspace_id).eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null, error: null }),
+    ]);
+    for (const result of [subtasks, taskLabels, labels, activity, list, workspace]) throwOnError(result.error);
+    return { task, subtasks: subtasks.data ?? [], taskLabels: taskLabels.data ?? [], labels: labels.data ?? [], activity: activity.data ?? [], list: list.data, workspace: workspace.data };
+  },
   async saveBundle(input: TodoTaskBundle) {
     const { data, error } = await (await context()).supabase.rpc("save_todo_task_bundle", {
       p_task_id: input.id ?? null,
@@ -98,6 +114,25 @@ export const todoTasksService = {
       p_label_ids: input.labelIds,
       p_new_labels: input.newLabels,
       p_subtasks: input.subtasks.map((subtask) => ({ id: subtask.id, title: subtask.title, is_completed: subtask.isCompleted })),
+    });
+    throwOnError(error);
+    return data;
+  },
+  async saveDetails(input: TodoTaskDetails) {
+    const { data, error } = await (await context()).supabase.rpc("save_todo_task_details_bundle", {
+      p_task_id: input.id,
+      p_list_id: input.listId,
+      p_workspace_id: input.workspaceId ?? null,
+      p_title: input.title,
+      p_description: input.description ?? null,
+      p_priority: input.priority,
+      p_starts_on: input.startsOn,
+      p_due_on: input.dueOn,
+      p_due_at: input.dueAt,
+      p_label_ids: input.labelIds,
+      p_new_labels: input.newLabels,
+      p_subtasks: input.subtasks.map((subtask) => ({ id: subtask.id, title: subtask.title, is_completed: subtask.isCompleted })),
+      p_status: input.status,
     });
     throwOnError(error);
     return data;

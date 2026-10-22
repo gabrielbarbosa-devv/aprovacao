@@ -5,7 +5,7 @@ import { unstable_rethrow } from "next/navigation";
 import {
   todoIdSchema, todoLabelInputSchema, todoLabelUpdateSchema, todoListInputSchema, todoListUpdateSchema,
   todoSubtaskInputSchema, todoSubtaskUpdateSchema, todoTaskIdSchema, todoTaskInputSchema,
-  todoTaskBundleSchema, todoTaskLabelInputSchema, todoTaskUpdateSchema, todoWorkspaceInputSchema, todoWorkspaceUpdateSchema,
+  todoTaskBundleSchema, todoTaskDetailsSchema, todoTaskLabelInputSchema, todoTaskUpdateSchema, todoWorkspaceInputSchema, todoWorkspaceUpdateSchema,
 } from "@/features/todo/domain/schemas";
 import {
   todoActivityService, todoLabelsService, todoListsService, todoSubtasksService,
@@ -38,6 +38,11 @@ export async function loadTodoTasksAction(input: unknown) {
   const parsed = parse(schema, input);
   if (!parsed.ok) return parsed.result;
   return run(() => todoTasksService.list(parsed.value));
+}
+export async function loadTodoTaskDetailsAction(input: unknown) {
+  const parsed = parse(todoTaskIdSchema, input);
+  if (!parsed.ok) return parsed.result;
+  return run(() => todoTasksService.getDetails(parsed.value.taskId));
 }
 export async function loadTodoSubtasksAction(input: unknown) {
   const parsed = parse(todoTaskIdSchema, input);
@@ -114,6 +119,11 @@ export async function saveTodoTaskBundleAction(input: unknown) {
   const parsed = parse(todoTaskBundleSchema, input);
   if (!parsed.ok) return parsed.result;
   return run(() => todoTasksService.saveBundle(parsed.value));
+}
+export async function saveTodoTaskDetailsAction(input: unknown) {
+  const parsed = parse(todoTaskDetailsSchema, input);
+  if (!parsed.ok) return parsed.result;
+  return run(() => todoTasksService.saveDetails(parsed.value));
 }
 export async function todoSubtaskAction(input: unknown) {
   const schema = z.discriminatedUnion("operation", [

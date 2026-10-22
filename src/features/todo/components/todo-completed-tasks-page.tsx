@@ -170,7 +170,7 @@ export function TodoCompletedTasksPage() {
       </aside>
     </main>
 
-    <TodoTaskDetailsSheet task={activeTask} list={activeList} workspace={activeWorkspace} onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }} onToggleComplete={(task) => reopenTask(task)} saving={activeTask ? savingTaskIds.has(activeTask.id) : false} />
+    <TodoTaskDetailsSheet task={activeTask} list={activeList} workspace={activeWorkspace} lists={lists} workspaces={workspaces} onSelectTask={setSelectedTaskId} onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }} onSaved={refreshAll} />
     <TodoTaskFormDialog open={formOpen} onOpenChange={setFormOpen} lists={lists} workspaces={workspaces} initialDate={today} onCreated={refreshAll} />
     <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open && !deleting) setDeleteTarget(null); }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Excluir esta tarefa?</AlertDialogTitle><AlertDialogDescription>A tarefa será removida das suas listas. O histórico de atividade é preservado conforme as regras do To-Do.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel><AlertDialogAction variant="destructive" disabled={deleting} onClick={(event) => { event.preventDefault(); void deleteTask(); }}>{deleting ? <><LoaderCircle className="size-4 animate-spin" />Excluindo…</> : <><Trash2 className="size-4" />Excluir tarefa</>}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
   </>;
