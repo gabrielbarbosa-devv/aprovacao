@@ -38,8 +38,8 @@ function TodoSidebarContent({ email }: { email: string }) {
     setSelectedListId(null);
     setSelectedWorkspaceId(null);
     setSelectedDate(null);
-    setView(nextView);
-    router.push(nextView === "today" ? "/todo/today" : nextView === "all" ? "/todo/all" : nextView === "completed" ? "/todo/completed" : "/todo");
+    setView(nextView === "workspaces" ? "overview" : nextView);
+    router.push(nextView === "today" ? "/todo/today" : nextView === "all" ? "/todo/all" : nextView === "completed" ? "/todo/completed" : nextView === "workspaces" ? "/todo/workspaces" : "/todo");
   };
 
   return (
@@ -65,7 +65,7 @@ function TodoSidebarContent({ email }: { email: string }) {
                     ? pathname === "/todo/all"
                     : itemView === "completed"
                       ? pathname === "/todo/completed"
-                      : pathname !== "/todo/today" && pathname !== "/todo/all" && pathname !== "/todo/completed" && view === itemView;
+                      : pathname === "/todo" && view === itemView;
                 return (
                   <SidebarMenuItem key={itemView}>
                     <SidebarMenuButton type="button" onClick={() => selectView(itemView)} isActive={active} aria-current={active ? "page" : undefined} tooltip={label} className="h-10 px-3 font-medium">
@@ -106,17 +106,17 @@ function TodoSidebarContent({ email }: { email: string }) {
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
               {loading ? <SidebarMenuItem><Skeleton className="mx-2 h-8" /></SidebarMenuItem> : workspaces.map((workspace) => {
-                const active = view === "workspace" && selectedWorkspaceId === workspace.id;
+                const active = pathname === `/todo/workspaces/${workspace.id}` || (view === "workspace" && selectedWorkspaceId === workspace.id);
                 return (
                   <SidebarMenuItem key={workspace.id}>
-                    <SidebarMenuButton type="button" onClick={() => { setSelectedListId(null); setSelectedDate(null); setSelectedWorkspaceId(workspace.id); setView("workspace"); router.push("/todo"); }} isActive={active} aria-current={active ? "page" : undefined} tooltip={workspace.name} className="h-9 px-3">
+                    <SidebarMenuButton type="button" onClick={() => { setSelectedListId(null); setSelectedDate(null); setSelectedWorkspaceId(workspace.id); setView("overview"); router.push(`/todo/workspaces/${workspace.id}`); }} isActive={active} aria-current={active ? "page" : undefined} tooltip={workspace.name} className="h-9 px-3">
                       <BriefcaseBusiness aria-hidden="true" /><span>{workspace.name}</span><Badge variant="secondary" className="ml-auto h-5 min-w-6 justify-center px-1 text-[10px] group-data-[collapsible=icon]:hidden">{tasksInWorkspace(workspace.id)}</Badge>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
               })}
               <SidebarMenuItem>
-                <SidebarMenuButton type="button" onClick={() => selectView("workspaces")} isActive={view === "workspaces"} aria-current={view === "workspaces" ? "page" : undefined} tooltip="Todos os workspaces" className="h-9 px-3 text-muted-foreground">
+                <SidebarMenuButton type="button" onClick={() => selectView("workspaces")} isActive={pathname === "/todo/workspaces"} aria-current={pathname === "/todo/workspaces" ? "page" : undefined} tooltip="Todos os workspaces" className="h-9 px-3 text-muted-foreground">
                   <Layers3 aria-hidden="true" /><span>Ver workspaces</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>

@@ -33,6 +33,8 @@ describe("To-Do additive schema and RLS", () => {
     await db.exec(migration);
     const transferMigration = await readFile(resolve(process.cwd(), "supabase/migrations/20261022193448_todo_list_atomic_transfer.sql"), "utf8");
     await db.exec(transferMigration);
+    const workspaceDeleteMigration = await readFile(resolve(process.cwd(), "supabase/migrations/20261022200431_delete_todo_workspace_with_task_policy.sql"), "utf8");
+    await db.exec(workspaceDeleteMigration);
   });
 
   afterAll(async () => { await db.close(); });
@@ -118,6 +120,33 @@ describe("To-Do additive schema and RLS", () => {
       expect.objectContaining({ list_id: target, deleted_at: null }),
       expect.objectContaining({ list_id: target }),
     ]));
+    await db.exec("reset role");
+  });
+
+  it("requires an owned workspace and an explicit task policy when deleting it", async () => {
+    const listA = (await rows<{ id: string }>(`select id from public.todo_lists where user_id='${userA}' and slug='pessoal'`))[0].id;
+    await db.exec(`set request.jwt.claim.sub='${userA}'; set role authenticated; insert into public.todo_workspaces(user_id,name) values ('${userA}','Manter tarefas');`);
+    const keepWorkspace = (await rows<{ id: string }>(`select id from public.todo_workspaces where user_id='${userA}' and name='Manter tarefas'`))[0].id;
+    await db.exec(`insert into public.todo_tasks(user_id,list_id,workspace_id,title) values ('${userA}','${listA}','${keepWorkspace}','Ativa para manter'),('${userA}','${listA}','${keepWorkspace}','Histórico removido'); update public.todo_tasks set deleted_at=now() where title='Histórico removido';`);
+    const keepCount = await rows<{ delete_todo_workspace_with_task_policy: number }>(`select public.delete_todo_workspace_with_task_policy('${keepWorkspace}','keep_tasks')`);
+    expect(keepCount[0].delete_todo_workspace_with_task_policy).toBe(2);
+    const keptTasks = await rows<{ title: string; workspace_id: string | null; deleted_at: string | null }>(`select title,workspace_id,deleted_at from public.todo_tasks where title in ('Ativa para manter','Histórico removido') order by title`);
+    expect(keptTasks).toHaveLength(2);
+    expect(keptTasks[0]).toMatchObject({ title: "Ativa para manter", workspace_id: null, deleted_at: null });
+    expect(keptTasks[1]).toMatchObject({ title: "Histórico removido", workspace_id: null });
+    expect(keptTasks[1].deleted_at).not.toBeNull();
+    expect(await rows<{ id: string }>(`select id from public.todo_workspaces where id='${keepWorkspace}'`)).toHaveLength(0);
+    await db.exec("reset role");
+
+    await db.exec(`set request.jwt.claim.sub='${userB}'; set role authenticated; insert into public.todo_tasks(user_id,list_id,workspace_id,title) values ('${userB}','${(await rows<{ id: string }>(`select id from public.todo_lists where user_id='${userB}' and slug='pessoal'`))[0].id}','${(await rows<{ id: string }>(`select id from public.todo_workspaces where user_id='${userB}'`))[0].id}','Excluir teste');`);
+    const workspaceB = (await rows<{ id: string }>(`select id from public.todo_workspaces where user_id='${userB}'`))[0].id;
+    await expectSqlFailure(`select public.delete_todo_workspace_with_task_policy('${workspaceB}','invalid')`);
+    await db.exec(`select public.delete_todo_workspace_with_task_policy('${workspaceB}','soft_delete_tasks')`);
+    const deletedTasks = await rows<{ workspace_id: string | null; deleted_at: string | null }>(`select workspace_id,deleted_at from public.todo_tasks where user_id='${userB}' and title='Excluir teste'`);
+    expect(deletedTasks).toHaveLength(1);
+    expect(deletedTasks[0].workspace_id).toBeNull();
+    expect(deletedTasks[0].deleted_at).not.toBeNull();
+    await expectSqlFailure(`select public.delete_todo_workspace_with_task_policy('${keepWorkspace}','keep_tasks')`);
     await db.exec("reset role");
   });
 });

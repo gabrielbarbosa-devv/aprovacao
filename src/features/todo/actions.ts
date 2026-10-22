@@ -64,6 +64,7 @@ export async function loadTodoActivityAction(input: unknown) {
   const { taskId } = parsed.value;
   return run(() => todoActivityService.list(taskId));
 }
+export async function loadTodoRecentActivityAction() { return run(() => todoActivityService.listRecent()); }
 
 const deleteSchema = todoIdSchema;
 export async function todoListAction(input: unknown) {
@@ -85,14 +86,14 @@ export async function todoWorkspaceAction(input: unknown) {
   const schema = z.discriminatedUnion("operation", [
     todoWorkspaceInputSchema.extend({ operation: z.literal("create") }),
     todoWorkspaceUpdateSchema.extend({ operation: z.literal("update") }),
-    deleteSchema.extend({ operation: z.literal("delete") }),
+    deleteSchema.extend({ operation: z.literal("delete_with_policy"), taskPolicy: z.enum(["keep_tasks", "soft_delete_tasks"]) }),
   ]);
   const parsed = parse(schema, input);
   if (!parsed.ok) return parsed.result;
   const value = parsed.value;
   if (value.operation === "create") { const { operation, ...payload } = value; void operation; return run(() => todoWorkspacesService.create(payload)); }
   if (value.operation === "update") { const { operation, ...payload } = value; void operation; return run(() => todoWorkspacesService.update(payload)); }
-  return run(async () => { await todoWorkspacesService.delete(value.id); return null; });
+  return run(() => todoWorkspacesService.deleteWithTaskPolicy(value.id, value.taskPolicy));
 }
 export async function todoTaskAction(input: unknown) {
   const schema = z.discriminatedUnion("operation", [

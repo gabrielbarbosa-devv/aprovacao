@@ -73,10 +73,13 @@ export const todoWorkspacesService = {
     throwOnError(error);
     return data;
   },
-  async delete(id: string) {
-    const { user, supabase } = await context();
-    const { error } = await supabase.from("todo_workspaces").delete().eq("id", id).eq("user_id", user.id);
+  async deleteWithTaskPolicy(id: string, taskPolicy: "keep_tasks" | "soft_delete_tasks") {
+    const { data, error } = await (await context()).supabase.rpc("delete_todo_workspace_with_task_policy", {
+      p_workspace_id: id,
+      p_task_policy: taskPolicy,
+    });
     throwOnError(error);
+    return data ?? 0;
   },
 };
 
@@ -240,6 +243,12 @@ export const todoActivityService = {
   async list(taskId: string) {
     const { user, supabase } = await context();
     const { data, error } = await supabase.from("todo_activity_logs").select("*").eq("user_id", user.id).eq("task_id", taskId).order("created_at", { ascending: false });
+    throwOnError(error);
+    return data ?? [];
+  },
+  async listRecent() {
+    const { user, supabase } = await context();
+    const { data, error } = await supabase.from("todo_activity_logs").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100);
     throwOnError(error);
     return data ?? [];
   },

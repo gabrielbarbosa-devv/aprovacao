@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import {
-  loadTodoActivityAction, loadTodoLabelsAction, loadTodoListsAction, loadTodoSubtasksAction, loadTodoTaskLabelsForTasksAction,
+  loadTodoActivityAction, loadTodoLabelsAction, loadTodoListsAction, loadTodoRecentActivityAction, loadTodoSubtasksAction, loadTodoTaskLabelsForTasksAction,
   loadTodoTaskLabelsAction, loadTodoTasksAction, loadTodoWorkspacesAction,
 } from "@/features/todo/actions";
 import { useTodoResource } from "@/features/todo/hooks/use-todo-resource";
@@ -45,4 +45,8 @@ export function useTodoLabelsForTasks(taskIds: string[]) {
 export function useTodoActivity(taskId: string) {
   const loader = useCallback(() => loadTodoActivityAction({ taskId }), [taskId]);
   return useTodoResource(loader);
+}
+
+export function useTodoRecentActivity() {
+  return useTodoResource(loadTodoRecentActivityAction);
 }

@@ -20,15 +20,16 @@ type TodoTaskFormDialogProps = {
   workspaces: TodoWorkspace[];
   initialDate: string;
   initialListId?: string;
+  initialWorkspaceId?: string;
   initialTask?: TodoTask | null;
   onCreated: () => Promise<void>;
 };
 
-export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, initialDate, initialListId, initialTask = null, onCreated }: TodoTaskFormDialogProps) {
+export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, initialDate, initialListId, initialWorkspaceId, initialTask = null, onCreated }: TodoTaskFormDialogProps) {
   const [title, setTitle] = useState(initialTask?.title ?? "");
   const [description, setDescription] = useState(initialTask?.description ?? "");
   const [listId, setListId] = useState(initialTask?.list_id ?? initialListId ?? "");
-  const [workspaceId, setWorkspaceId] = useState(initialTask?.workspace_id ?? "none");
+  const [workspaceId, setWorkspaceId] = useState(initialTask?.workspace_id ?? initialWorkspaceId ?? "none");
   const [priority, setPriority] = useState<"low" | "medium" | "high">((initialTask?.priority as "low" | "medium" | "high" | undefined) ?? "medium");
   const [dueOn, setDueOn] = useState(initialTask?.due_on ?? "");
   const [dueTime, setDueTime] = useState(initialTask?.due_at ? new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(initialTask.due_at)) : "");
@@ -38,7 +39,7 @@ export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, init
   const priorityItems = [{ value: "low", label: "Baixa" }, { value: "medium", label: "Média" }, { value: "high", label: "Alta" }] as const;
 
   const reset = () => {
-    setTitle(initialTask?.title ?? ""); setDescription(initialTask?.description ?? ""); setListId(initialTask?.list_id ?? initialListId ?? ""); setWorkspaceId(initialTask?.workspace_id ?? "none"); setPriority((initialTask?.priority as "low" | "medium" | "high" | undefined) ?? "medium"); setDueOn(initialTask?.due_on ?? ""); setDueTime(initialTask?.due_at ? new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(initialTask.due_at)) : "");
+    setTitle(initialTask?.title ?? ""); setDescription(initialTask?.description ?? ""); setListId(initialTask?.list_id ?? initialListId ?? ""); setWorkspaceId(initialTask?.workspace_id ?? initialWorkspaceId ?? "none"); setPriority((initialTask?.priority as "low" | "medium" | "high" | undefined) ?? "medium"); setDueOn(initialTask?.due_on ?? ""); setDueTime(initialTask?.due_at ? new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(initialTask.due_at)) : "");
   };
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -99,7 +100,7 @@ export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, init
             <div className="space-y-2">
               <Label>Workspace <span className="font-normal text-muted-foreground">(opcional)</span></Label>
               <Select items={workspaceItems} value={workspaceId} onValueChange={(value) => setWorkspaceId(value ?? "none")}>
-                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full" disabled={Boolean(initialWorkspaceId && !initialTask)}><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="none">Sem workspace</SelectItem>{workspaces.map((workspace) => <SelectItem key={workspace.id} value={workspace.id}>{workspace.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
