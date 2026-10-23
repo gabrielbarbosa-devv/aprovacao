@@ -3,7 +3,7 @@ import { countLabelUsage, splitListTasks, splitWorkListTasks } from "./list-page
 import type { TodoTask } from "./types";
 
 function task(id: string, status: string, due_on: string | null): TodoTask {
-  return { id, user_id: "user", list_id: "list", workspace_id: null, title: id, description: null, status, priority: "medium", starts_on: "2026-10-01", due_on, due_at: null, completed_at: status === "done" ? "2026-10-01T12:00:00Z" : null, position: 0, created_at: "2026-10-01T12:00:00Z", updated_at: "2026-10-01T12:00:00Z", deleted_at: null };
+  return { id, user_id: "user", list_id: "list", workspace_id: null, title: id, description: null, status, priority: "medium", starts_on: "2026-10-01", due_on, due_at: null, completed_at: status === "done" ? "2026-10-01T12:00:00Z" : null, position: 0, recurrence_rule_id: null, recurrence_on: null, created_at: "2026-10-01T12:00:00Z", updated_at: "2026-10-01T12:00:00Z", deleted_at: null, archived_at: null };
 }
 
 describe("list page derived data", () => {

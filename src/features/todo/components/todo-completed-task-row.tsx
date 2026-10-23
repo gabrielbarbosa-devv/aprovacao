@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Clock3, LoaderCircle, MoreHorizontal, RotateCcw, Trash2 } from "lucide-react";
+import { Archive, Check, Clock3, LoaderCircle, MoreHorizontal, RotateCcw, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -41,7 +41,8 @@ export function TodoCompletedTaskRow({ task, list, workspace, saving, onOpen, on
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem onClick={() => onOpen(task)}><Check aria-hidden="true" />Ver detalhes</DropdownMenuItem>
           <DropdownMenuItem onClick={() => onReopen(task)}><RotateCcw aria-hidden="true" />Reabrir tarefa</DropdownMenuItem>
-          <DropdownMenuItem variant="destructive" onClick={() => onDelete(task)}><Trash2 aria-hidden="true" />Excluir tarefa</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onDelete(task)}><Archive aria-hidden="true" />Arquivar…</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onDelete(task)}><Trash2 aria-hidden="true" />Mover para a lixeira…</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

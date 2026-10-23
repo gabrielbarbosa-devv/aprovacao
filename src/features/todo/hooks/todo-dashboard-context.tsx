@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import { useTodoLists, useTodoTasks, useTodoWorkspaces } from "@/features/todo/hooks/use-todo-data";
 import type { TodoList, TodoTask, TodoWorkspace } from "@/features/todo/domain/types";
 
-export type TodoDashboardView = "overview" | "today" | "all" | "completed" | "lists" | "workspaces" | "list" | "workspace";
+export type TodoDashboardView = "overview" | "today" | "all" | "completed" | "recurring" | "weekly-review" | "lists" | "workspaces" | "list" | "workspace";
 
 type TodoDashboardContextValue = {
   lists: TodoList[];

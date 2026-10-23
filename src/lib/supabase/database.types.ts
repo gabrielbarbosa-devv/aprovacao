@@ -338,12 +338,13 @@ export type Database = {
         { id?: string; user_id?: string; name?: string; description?: string | null; icon?: string; color?: string; created_at?: string; updated_at?: string }
       >
       todo_tasks: TodoTable<
-        { id: string; user_id: string; list_id: string; workspace_id: string | null; title: string; description: string | null; status: string; priority: string; starts_on: string; due_on: string | null; due_at: string | null; completed_at: string | null; position: number; created_at: string; updated_at: string; deleted_at: string | null },
-        { id?: string; user_id: string; list_id: string; workspace_id?: string | null; title: string; description?: string | null; status?: string; priority?: string; starts_on?: string; due_on?: string | null; due_at?: string | null; completed_at?: string | null; position?: number; created_at?: string; updated_at?: string; deleted_at?: string | null },
-        { id?: string; user_id?: string; list_id?: string; workspace_id?: string | null; title?: string; description?: string | null; status?: string; priority?: string; starts_on?: string; due_on?: string | null; due_at?: string | null; completed_at?: string | null; position?: number; created_at?: string; updated_at?: string; deleted_at?: string | null },
+        { id: string; user_id: string; list_id: string; workspace_id: string | null; title: string; description: string | null; status: string; priority: string; starts_on: string; due_on: string | null; due_at: string | null; completed_at: string | null; position: number; recurrence_rule_id: string | null; recurrence_on: string | null; created_at: string; updated_at: string; deleted_at: string | null; archived_at: string | null },
+        { id?: string; user_id: string; list_id: string; workspace_id?: string | null; title: string; description?: string | null; status?: string; priority?: string; starts_on?: string; due_on?: string | null; due_at?: string | null; completed_at?: string | null; position?: number; recurrence_rule_id?: string | null; recurrence_on?: string | null; created_at?: string; updated_at?: string; deleted_at?: string | null; archived_at?: string | null },
+        { id?: string; user_id?: string; list_id?: string; workspace_id?: string | null; title?: string; description?: string | null; status?: string; priority?: string; starts_on?: string; due_on?: string | null; due_at?: string | null; completed_at?: string | null; position?: number; recurrence_rule_id?: string | null; recurrence_on?: string | null; created_at?: string; updated_at?: string; deleted_at?: string | null; archived_at?: string | null },
         [
           { foreignKeyName: "todo_tasks_list_owner_fkey"; columns: ["list_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_lists"; referencedColumns: ["id", "user_id"] },
           { foreignKeyName: "todo_tasks_workspace_owner_fkey"; columns: ["workspace_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_workspaces"; referencedColumns: ["id", "user_id"] },
+          { foreignKeyName: "todo_tasks_recurrence_rule_owner_fkey"; columns: ["recurrence_rule_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_recurrence_rules"; referencedColumns: ["id", "user_id"] },
         ]
       >
       todo_subtasks: TodoTable<
@@ -371,6 +372,49 @@ export type Database = {
         { id?: string; user_id: string; task_id: string; action: string; metadata?: Json; created_at?: string },
         { id?: string; user_id?: string; task_id?: string; action?: string; metadata?: Json; created_at?: string },
         [{ foreignKeyName: "todo_activity_logs_task_owner_fkey"; columns: ["task_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_tasks"; referencedColumns: ["id", "user_id"] }]
+      >
+      todo_recurrence_rules: TodoTable<
+        { id: string; user_id: string; template_task_id: string | null; frequency: string; interval_count: number; weekdays: number[]; monthly_mode: string; month_day: number; month_week: string; month_weekday: number; annual_month: number; annual_day: number; custom_unit: string; starts_on: string; time_of_day: string | null; ends_on: string | null; max_occurrences: number | null; timezone: string; schedule_basis: string; status: string; next_occurrence_on: string | null; occurrences_created: number; template: Json; created_at: string; updated_at: string },
+        { id?: string; user_id: string; template_task_id?: string | null; frequency: string; interval_count: number; weekdays?: number[]; monthly_mode?: string; month_day?: number; month_week?: string; month_weekday?: number; annual_month?: number; annual_day?: number; custom_unit?: string; starts_on: string; time_of_day?: string | null; ends_on?: string | null; max_occurrences?: number | null; timezone: string; schedule_basis: string; status?: string; next_occurrence_on?: string | null; occurrences_created?: number; template: Json; created_at?: string; updated_at?: string },
+        { id?: string; user_id?: string; template_task_id?: string | null; frequency?: string; interval_count?: number; weekdays?: number[]; monthly_mode?: string; month_day?: number; month_week?: string; month_weekday?: number; annual_month?: number; annual_day?: number; custom_unit?: string; starts_on?: string; time_of_day?: string | null; ends_on?: string | null; max_occurrences?: number | null; timezone?: string; schedule_basis?: string; status?: string; next_occurrence_on?: string | null; occurrences_created?: number; template?: Json; created_at?: string; updated_at?: string },
+        [{ foreignKeyName: "todo_recurrence_rules_template_owner_fkey"; columns: ["template_task_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_tasks"; referencedColumns: ["id", "user_id"] }]
+      >
+      todo_recurrence_exceptions: TodoTable<
+        { id: string; user_id: string; rule_id: string; occurrence_on: string; action: string; override_on: string | null; created_at: string },
+        { id?: string; user_id: string; rule_id: string; occurrence_on: string; action: string; override_on?: string | null; created_at?: string },
+        { id?: string; user_id?: string; rule_id?: string; occurrence_on?: string; action?: string; override_on?: string | null; created_at?: string },
+        [{ foreignKeyName: "todo_recurrence_exceptions_rule_owner_fkey"; columns: ["rule_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_recurrence_rules"; referencedColumns: ["id", "user_id"] }]
+      >
+      todo_weekly_reviews: TodoTable<
+        { id: string; user_id: string; week_start: string; current_step: number; notes: string; capture_draft_title: string; capture_draft_notes: string; finished_at: string | null; created_at: string; updated_at: string },
+        { id?: string; user_id: string; week_start: string; current_step?: number; notes?: string; capture_draft_title?: string; capture_draft_notes?: string; finished_at?: string | null; created_at?: string; updated_at?: string },
+        { id?: string; user_id?: string; week_start?: string; current_step?: number; notes?: string; capture_draft_title?: string; capture_draft_notes?: string; finished_at?: string | null; created_at?: string; updated_at?: string },
+        []
+      >
+      todo_weekly_review_captures: TodoTable<
+        { id: string; user_id: string; review_id: string; title: string; notes: string; list_id: string | null; scheduled_on: string | null; state: string; converted_task_id: string | null; created_at: string; updated_at: string },
+        { id?: string; user_id: string; review_id: string; title: string; notes?: string; list_id?: string | null; scheduled_on?: string | null; state?: string; converted_task_id?: string | null; created_at?: string; updated_at?: string },
+        { id?: string; user_id?: string; review_id?: string; title?: string; notes?: string; list_id?: string | null; scheduled_on?: string | null; state?: string; converted_task_id?: string | null; created_at?: string; updated_at?: string },
+        [
+          { foreignKeyName: "todo_weekly_review_captures_review_id_user_id_fkey"; columns: ["review_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_weekly_reviews"; referencedColumns: ["id", "user_id"] },
+          { foreignKeyName: "todo_weekly_review_captures_list_id_user_id_fkey"; columns: ["list_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_lists"; referencedColumns: ["id", "user_id"] },
+          { foreignKeyName: "todo_weekly_review_captures_converted_task_id_user_id_fkey"; columns: ["converted_task_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_tasks"; referencedColumns: ["id", "user_id"] },
+        ]
+      >
+      todo_weekly_review_priorities: TodoTable<
+        { review_id: string; user_id: string; task_id: string; position: number; why_important: string; planned_on: string | null; planned_time: string | null; created_at: string; updated_at: string },
+        { review_id: string; user_id: string; task_id: string; position: number; why_important?: string; planned_on?: string | null; planned_time?: string | null; created_at?: string; updated_at?: string },
+        { review_id?: string; user_id?: string; task_id?: string; position?: number; why_important?: string; planned_on?: string | null; planned_time?: string | null; created_at?: string; updated_at?: string },
+        [
+          { foreignKeyName: "todo_weekly_review_priorities_review_id_user_id_fkey"; columns: ["review_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_weekly_reviews"; referencedColumns: ["id", "user_id"] },
+          { foreignKeyName: "todo_weekly_review_priorities_task_id_user_id_fkey"; columns: ["task_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_tasks"; referencedColumns: ["id", "user_id"] },
+        ]
+      >
+      todo_weekly_review_reservations: TodoTable<
+        { user_id: string; review_id: string; planned_on: string; created_at: string },
+        { user_id: string; review_id: string; planned_on: string; created_at?: string },
+        never,
+        [{ foreignKeyName: "todo_weekly_review_reservations_review_id_user_id_fkey"; columns: ["review_id", "user_id"]; isOneToOne: false; referencedRelation: "todo_weekly_reviews"; referencedColumns: ["id", "user_id"] }]
       >
     }
     Views: {
@@ -451,6 +495,19 @@ export type Database = {
       delete_todo_workspace_with_task_policy: { Args: { p_workspace_id: string; p_task_policy: string }; Returns: number }
       save_todo_task_bundle: { Args: { p_task_id: string | null; p_list_id: string; p_workspace_id: string | null; p_title: string; p_description: string | null; p_priority: string; p_starts_on: string; p_due_on: string | null; p_due_at: string | null; p_label_ids: string[]; p_new_labels: string[]; p_subtasks: Json }; Returns: string }
       save_todo_task_details_bundle: { Args: { p_task_id: string; p_list_id: string; p_workspace_id: string | null; p_title: string; p_description: string | null; p_priority: string; p_starts_on: string; p_due_on: string | null; p_due_at: string | null; p_label_ids: string[]; p_new_labels: string[]; p_subtasks: Json; p_status: string }; Returns: string }
+      save_todo_task_details_if_unchanged: { Args: { p_task_id: string; p_list_id: string; p_workspace_id: string | null; p_title: string; p_description: string | null; p_priority: string; p_starts_on: string; p_due_on: string | null; p_due_at: string | null; p_label_ids: string[]; p_new_labels: string[]; p_subtasks: Json; p_status: string; p_expected_updated_at: string }; Returns: string }
+      save_todo_task_with_recurrence: { Args: { p_task_id: string | null; p_list_id: string; p_workspace_id: string | null; p_title: string; p_description: string | null; p_priority: string; p_starts_on: string; p_due_on: string | null; p_due_at: string | null; p_label_ids: string[]; p_new_labels: string[]; p_subtasks: Json; p_recurrence: Json }; Returns: string }
+      ensure_todo_recurrence_occurrences: { Args: { p_days_ahead?: number }; Returns: number }
+      todo_recurrence_config_json: { Args: { p_rule_id: string }; Returns: Json }
+      set_todo_recurrence_state: { Args: { p_rule_id: string; p_status: string }; Returns: undefined }
+      set_todo_recurrence_exception: { Args: { p_rule_id: string; p_occurrence_on: string; p_action: string; p_override_on?: string | null }; Returns: undefined }
+      save_todo_task_details_with_recurrence_if_unchanged: { Args: { p_task_id: string; p_list_id: string; p_workspace_id: string | null; p_title: string; p_description: string | null; p_priority: string; p_starts_on: string; p_due_on: string | null; p_due_at: string | null; p_label_ids: string[]; p_new_labels: string[]; p_subtasks: Json; p_status: string; p_expected_updated_at: string; p_recurrence: Json | null; p_recurrence_scope?: string }; Returns: string }
+      reorder_todo_task_positions: { Args: { p_list_id: string; p_lane: string; p_task_ids: string[] }; Returns: { id: string; task_position: number }[] }
+      create_todo_weekly_capture: { Args: { p_week_start: string; p_title: string; p_notes?: string }; Returns: string }
+      save_todo_weekly_capture_draft: { Args: { p_week_start: string; p_title: string; p_notes?: string }; Returns: boolean }
+      convert_todo_weekly_capture_to_task: { Args: { p_capture_id: string; p_list_id: string; p_scheduled_on?: string | null }; Returns: string }
+      save_todo_weekly_review: { Args: { p_week_start: string; p_current_step: number; p_notes: string; p_priorities: Json }; Returns: string }
+      set_todo_weekly_review_reservation: { Args: { p_week_start: string; p_planned_on: string; p_reserved: boolean }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

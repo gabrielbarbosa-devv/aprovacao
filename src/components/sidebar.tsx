@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  ArrowLeft,
   BookOpen,
   CalendarDays,
   ChartNoAxesCombined,
@@ -106,6 +107,16 @@ export function Sidebar({ email, activeItem = "hoje" }: SidebarProps) {
       <SidebarFooter className="gap-2 px-3 pb-4">
         <SidebarSeparator className="mb-1" />
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              render={<Link href="/" aria-label="Voltar à escolha de módulos" />}
+              tooltip="Voltar à escolha de módulos"
+              className="h-11 px-3 font-semibold"
+            >
+              <ArrowLeft aria-hidden="true" />
+              <span>Voltar aos módulos</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               render={<Link href="/configuracoes" aria-current={activeItem === "configuracoes" ? "page" : undefined} />}

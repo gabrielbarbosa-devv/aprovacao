@@ -4,5 +4,5 @@ import { requireUser } from "@/lib/auth/require-user";
 
 export default async function TodoSegmentLayout({ children }: { children: ReactNode }) {
   const { user } = await requireUser();
-  return <TodoLayout email={user.email ?? ""}>{children}</TodoLayout>;
+  return <TodoLayout email={user.email ?? ""} userId={user.id}>{children}</TodoLayout>;
 }

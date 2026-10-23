@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { todoRecurrenceConfigSchema } from "./recurrence";
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 const uuid = z.uuid();
@@ -35,13 +36,17 @@ export const todoTaskBundleSchema = z.object({
   labelIds: z.array(uuid).max(50),
   newLabels: z.array(text(60)).max(30),
   subtasks: z.array(z.object({ id: uuid.optional(), title: text(240), isCompleted: z.boolean() }).strict()).max(50),
+  recurrence: todoRecurrenceConfigSchema.nullable().optional(),
 }).strict().superRefine((input, context) => {
   if (input.dueOn && input.dueOn < input.startsOn) context.addIssue({ code: "custom", path: ["dueOn"], message: "O vencimento não pode ser anterior à data de início." });
   if (input.dueAt && !input.dueOn) context.addIssue({ code: "custom", path: ["dueAt"], message: "Selecione uma data de vencimento para definir um horário." });
+  if (!input.id && input.recurrence && input.recurrence.startsOn !== input.startsOn) context.addIssue({ code: "custom", path: ["recurrence", "startsOn"], message: "A data de início da recorrência deve corresponder à data de início da tarefa." });
 });
 export const todoTaskDetailsSchema = todoTaskBundleSchema.safeExtend({
   id: uuid,
   status: z.enum(["todo", "in_progress", "done"]),
+  expectedUpdatedAt: z.iso.datetime({ offset: true }),
+  recurrenceScope: z.enum(["occurrence", "following", "series"]).default("occurrence"),
 });
 export const todoSubtaskInputSchema = z.object({ taskId: uuid, title: text(240), position: z.number().int().min(0).optional() }).strict();
 export const todoSubtaskUpdateSchema = z.object({ id: uuid, title: text(240).optional(), isCompleted: z.boolean().optional(), position: z.number().int().min(0).optional() }).strict();

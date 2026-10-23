@@ -8,12 +8,12 @@ import { TodoTaskDetailsSheet } from "@/features/todo/components/todo-task-detai
 import { TodoTaskFilters } from "@/features/todo/components/todo-task-filters";
 import { TodoTaskFormDialog } from "@/features/todo/components/todo-task-form-dialog";
 import { TodoTaskGroup } from "@/features/todo/components/todo-task-group";
+import { TodoTaskLifecycleDialog, type TodoTaskLifecycleAction } from "@/features/todo/components/todo-task-lifecycle-dialog";
 import { filterTodoTasks, groupTodoTasks, hasTodoTaskListFilters, type TodoTaskListFilters as Filters } from "@/features/todo/domain/task-list";
 import { localDateKey } from "@/features/todo/domain/dashboard";
 import { useTodoDashboardData } from "@/features/todo/hooks/todo-dashboard-context";
 import type { TodoTask } from "@/features/todo/domain/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -146,25 +146,27 @@ export function TodoAllTasksPage() {
     }
   }
 
-  async function deleteTask() {
-    if (!deleteTarget || deleting) return;
+  async function applyLifecycle(action: TodoTaskLifecycleAction): Promise<boolean> {
+    if (!deleteTarget || deleting) return false;
     const target = deleteTarget;
     setDeleting(true);
     setOptimisticallyDeleted((current) => new Set(current).add(target.id));
     try {
-      const result = await todoTaskAction({ operation: "soft_delete", id: target.id });
+      const result = await todoTaskAction({ operation: action, id: target.id });
       if (!result.ok) {
         setOptimisticallyDeleted((current) => { const next = new Set(current); next.delete(target.id); return next; });
         toast.error(result.message);
-        return;
+        return false;
       }
-      toast.success("Tarefa excluída.");
+      toast.success(action === "archive" ? "Tarefa arquivada." : "Tarefa movida para a lixeira.");
       setSelectedTaskId((current) => current === target.id ? null : current);
       setDeleteTarget(null);
-      await refreshAll();
+      try { await refreshAll(); } catch { toast.warning("A tarefa foi atualizada, mas a lista ainda não foi recarregada."); }
+      return true;
     } catch {
       setOptimisticallyDeleted((current) => { const next = new Set(current); next.delete(target.id); return next; });
-      toast.error("Não foi possível excluir a tarefa. Tente novamente.");
+      toast.error(action === "archive" ? "Não foi possível arquivar a tarefa." : "Não foi possível mover a tarefa para a lixeira.");
+      return false;
     } finally {
       setDeleting(false);
     }
@@ -197,6 +199,6 @@ export function TodoAllTasksPage() {
 
     <TodoTaskFormDialog open={formOpen} onOpenChange={setFormOpen} lists={lists} workspaces={workspaces} initialDate={today} onCreated={refreshAll} />
     <TodoTaskDetailsSheet task={activeTask} list={activeList} workspace={activeWorkspace} lists={lists} workspaces={workspaces} onSelectTask={setSelectedTaskId} onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }} onSaved={refreshAll} />
-    <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open && !deleting) setDeleteTarget(null); }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Excluir esta tarefa?</AlertDialogTitle><AlertDialogDescription>Ela será ocultada das suas listas e deixará de aparecer nos resultados.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel><AlertDialogAction variant="destructive" disabled={deleting} onClick={(event) => { event.preventDefault(); void deleteTask(); }}>{deleting ? <><LoaderCircle className="size-4 animate-spin" />Excluindo…</> : "Excluir tarefa"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+    <TodoTaskLifecycleDialog open={deleteTarget !== null} taskTitle={deleteTarget?.title} onOpenChange={(open) => { if (!open && !deleting) setDeleteTarget(null); }} onConfirm={applyLifecycle} />
   </>;
 }

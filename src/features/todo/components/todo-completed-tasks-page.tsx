@@ -1,19 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, CircleHelp, LoaderCircle, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { CheckCircle2, CircleHelp, Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { todoTaskAction } from "@/features/todo/actions";
 import { TodoCompletedProductivityChart } from "@/features/todo/components/todo-completed-productivity-chart";
 import { TodoCompletedTaskRow } from "@/features/todo/components/todo-completed-task-row";
 import { TodoTaskDetailsSheet } from "@/features/todo/components/todo-task-details-sheet";
 import { TodoTaskFormDialog } from "@/features/todo/components/todo-task-form-dialog";
+import { TodoTaskLifecycleDialog, type TodoTaskLifecycleAction } from "@/features/todo/components/todo-task-lifecycle-dialog";
 import { calculateTodoCompletedMetrics, filterCompletedTasks, formatCompletedGroupLabel, getTodoCompletedRange, groupCompletedTasks, type TodoCompletedPeriod } from "@/features/todo/domain/completed-tasks";
 import { localDateKey } from "@/features/todo/domain/dashboard";
 import { useTodoDashboardData } from "@/features/todo/hooks/todo-dashboard-context";
 import type { TodoTask } from "@/features/todo/domain/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -96,25 +96,27 @@ export function TodoCompletedTasksPage() {
     }
   }
 
-  async function deleteTask() {
-    if (!deleteTarget || deleting) return;
+  async function applyLifecycle(action: TodoTaskLifecycleAction): Promise<boolean> {
+    if (!deleteTarget || deleting) return false;
     const target = deleteTarget;
     setDeleting(true);
     setOptimisticallyDeleted((current) => new Set(current).add(target.id));
     try {
-      const result = await todoTaskAction({ operation: "soft_delete", id: target.id });
+      const result = await todoTaskAction({ operation: action, id: target.id });
       if (!result.ok) {
         setOptimisticallyDeleted((current) => { const next = new Set(current); next.delete(target.id); return next; });
         toast.error(result.message);
-        return;
+        return false;
       }
       setSelectedTaskId((current) => current === target.id ? null : current);
       setDeleteTarget(null);
-      toast.success("Tarefa excluída.");
-      await refreshAll();
+      toast.success(action === "archive" ? "Tarefa arquivada." : "Tarefa movida para a lixeira.");
+      try { await refreshAll(); } catch { toast.warning("A tarefa foi atualizada, mas o histórico ainda não foi recarregado."); }
+      return true;
     } catch {
       setOptimisticallyDeleted((current) => { const next = new Set(current); next.delete(target.id); return next; });
-      toast.error("Não foi possível excluir a tarefa. Tente novamente.");
+      toast.error(action === "archive" ? "Não foi possível arquivar a tarefa." : "Não foi possível mover a tarefa para a lixeira.");
+      return false;
     } finally {
       setDeleting(false);
     }
@@ -172,6 +174,6 @@ export function TodoCompletedTasksPage() {
 
     <TodoTaskDetailsSheet task={activeTask} list={activeList} workspace={activeWorkspace} lists={lists} workspaces={workspaces} onSelectTask={setSelectedTaskId} onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }} onSaved={refreshAll} />
     <TodoTaskFormDialog open={formOpen} onOpenChange={setFormOpen} lists={lists} workspaces={workspaces} initialDate={today} onCreated={refreshAll} />
-    <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open && !deleting) setDeleteTarget(null); }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Excluir esta tarefa?</AlertDialogTitle><AlertDialogDescription>A tarefa será removida das suas listas. O histórico de atividade é preservado conforme as regras do To-Do.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel><AlertDialogAction variant="destructive" disabled={deleting} onClick={(event) => { event.preventDefault(); void deleteTask(); }}>{deleting ? <><LoaderCircle className="size-4 animate-spin" />Excluindo…</> : <><Trash2 className="size-4" />Excluir tarefa</>}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+    <TodoTaskLifecycleDialog open={deleteTarget !== null} taskTitle={deleteTarget?.title} onOpenChange={(open) => { if (!open && !deleting) setDeleteTarget(null); }} onConfirm={applyLifecycle} />
   </>;
 }

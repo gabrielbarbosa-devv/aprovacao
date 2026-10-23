@@ -21,6 +21,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "cn";
 import { useTodoTaskFormMutation } from "@/features/todo/hooks/use-todo-task-form-mutation";
+import { TodoRecurrenceFields } from "@/features/todo/components/todo-recurrence-fields";
+import { type TodoRecurrenceConfig } from "@/features/todo/domain/recurrence";
 
 type TodoTaskFormDialogProps = {
   open: boolean;
@@ -31,6 +33,7 @@ type TodoTaskFormDialogProps = {
   initialListId?: string;
   initialWorkspaceId?: string;
   initialTask?: TodoTask | null;
+  initialRecurrence?: TodoRecurrenceConfig | null;
   onCreated: () => Promise<void>;
 };
 type FormSubtask = { id?: string; title: string; isCompleted: boolean };
@@ -67,7 +70,7 @@ function DatePickerField({ id, label, value, onChange, disabledBefore, clearable
   );
 }
 
-export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, initialDate, initialListId, initialWorkspaceId, initialTask = null, onCreated }: TodoTaskFormDialogProps) {
+export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, initialDate, initialListId, initialWorkspaceId, initialTask = null, initialRecurrence = null, onCreated }: TodoTaskFormDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [listId, setListId] = useState("");
@@ -82,6 +85,7 @@ export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, init
   const [labelDraft, setLabelDraft] = useState("");
   const [subtasks, setSubtasks] = useState<FormSubtask[]>([]);
   const [subtaskDraft, setSubtaskDraft] = useState("");
+  const [recurrence, setRecurrence] = useState<TodoRecurrenceConfig | null>(initialRecurrence);
   const [loadingRelations, setLoadingRelations] = useState(false);
   const [relationsError, setRelationsError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -108,6 +112,7 @@ export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, init
     setLabelDraft("");
     setSubtasks([]);
     setSubtaskDraft("");
+    setRecurrence(initialRecurrence);
     setValidationError(null);
     setDirty(false);
   };
@@ -182,6 +187,10 @@ export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, init
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitLock.current || saving || taskMutation.pending) return;
+    if (initialTask?.recurrence_rule_id && initialRecurrence && !recurrence) {
+      const message = "Encerre esta recorrência pela tela Tarefas recorrentes antes de transformar a tarefa em avulsa.";
+      setValidationError(message); toast.error(message); return;
+    }
     const localDueAt = dueOn && dueTime ? (() => {
       const [year, month, day] = dueOn.split("-").map(Number);
       const [hours, minutes] = dueTime.split(":").map(Number);
@@ -197,6 +206,7 @@ export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, init
       startsOn,
       dueOn: dueOn || null,
       dueAt: localDueAt,
+      recurrence,
       labelIds: selectedLabels,
       newLabels,
       subtasks,
@@ -272,7 +282,7 @@ export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, init
                   <SelectContent><SelectItem value="low">Baixa</SelectItem><SelectItem value="medium">Média</SelectItem><SelectItem value="high">Alta</SelectItem></SelectContent>
                 </Select>
               </div>
-              <DatePickerField id="todo-task-start-date" label="Data de início" value={startsOn} onChange={(value) => { update(setStartsOn, value); if (dueOn && value && dueOn < value) setDueOn(""); }} clearable={false} />
+              <DatePickerField id="todo-task-start-date" label="Data de início" value={startsOn} onChange={(value) => { update(setStartsOn, value); if (recurrence) setRecurrence({ ...recurrence, startsOn: value }); if (dueOn && value && dueOn < value) setDueOn(""); }} clearable={false} />
               <DatePickerField id="todo-task-date" label="Vencimento" value={dueOn} onChange={(value) => { update(setDueOn, value); if (!value) setDueTime(""); }} disabledBefore={startDate} />
               <div className="space-y-2">
                 <Label htmlFor="todo-task-time">Horário <span className="font-normal text-muted-foreground">(opcional)</span></Label>
@@ -280,6 +290,8 @@ export function TodoTaskFormDialog({ open, onOpenChange, lists, workspaces, init
                 <p className="text-xs text-muted-foreground">No fuso local do seu dispositivo.</p>
               </div>
             </div>
+
+            <TodoRecurrenceFields value={recurrence} onChange={(value) => { setRecurrence(value); setDirty(true); }} startsOn={startsOn} />
 
             <section className="space-y-3 rounded-xl border p-4" aria-labelledby="todo-labels-heading">
               <div className="flex items-center gap-2"><Tag aria-hidden="true" className="size-4 text-muted-foreground" /><h3 id="todo-labels-heading" className="text-sm font-medium">Etiquetas</h3></div>

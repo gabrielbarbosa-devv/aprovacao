@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ArrowDownWideNarrow, ArrowRight, BriefcaseBusiness, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Circle, Clock3, ListTodo, LoaderCircle, Plus, RefreshCw, Search, Sparkles } from "lucide-react";
+import { ArrowDownWideNarrow, ArrowRight, BriefcaseBusiness, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Circle, CircleCheck, CircleDot, Clock3, Folder, ListTodo, LoaderCircle, Plus, RefreshCw, Search, Target, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { todoTaskAction } from "@/features/todo/actions";
 import { TodoTaskFormDialog } from "@/features/todo/components/todo-task-form-dialog";
 import { TodoTaskDetailsSheet } from "@/features/todo/components/todo-task-details-sheet";
 import { calculateTodoDashboardMetrics, isTaskActiveOn, isTaskScheduledOn, localDateFromKey, localDateKey, taskDueDateKey } from "@/features/todo/domain/dashboard";
+import { dashboardPreferencesKey, parseExpandedDashboardSections, serializeExpandedDashboardSections } from "@/features/todo/domain/dashboard-preferences";
 import { useTodoDashboardData, type TodoDashboardView } from "@/features/todo/hooks/todo-dashboard-context";
 import type { TodoTask } from "@/features/todo/domain/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -17,6 +18,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Accordion, AccordionHeader, AccordionItem, AccordionPanel, AccordionTrigger } from "@/components/ui/accordion";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const weekDays = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
@@ -58,7 +61,7 @@ function sortTasks(tasks: TodoTask[]): TodoTask[] {
 }
 
 function DashboardSkeleton() {
-  return <main className="mx-auto grid w-full max-w-[110rem] gap-5 p-4 sm:p-6 xl:grid-cols-[minmax(0,1fr)_20rem] xl:p-7"><section className="space-y-5"><Skeleton className="h-28 w-full" /><div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-28" />)}</div><Skeleton className="h-[26rem]" /></section><aside className="space-y-5"><Skeleton className="h-[24rem]" /><Skeleton className="h-56" /></aside></main>;
+  return <main className="mx-auto w-full max-w-[110rem] space-y-5 p-4 sm:p-6 xl:p-7"><Skeleton className="h-24 w-full" /><div className="grid gap-3 sm:grid-cols-3">{Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-28" />)}</div><div className="space-y-3">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-14 w-full" />)}</div></main>;
 }
 
 export function TodoHome() {
@@ -74,6 +77,10 @@ export function TodoHome() {
   const [savingTaskIds, setSavingTaskIds] = useState<Set<string>>(() => new Set());
   const [optimisticTasks, setOptimisticTasks] = useState<Map<string, TodoTask>>(() => new Map());
   const [searchText, setSearchText] = useState("");
+  const [showAgenda, setShowAgenda] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<string[]>(["overview:priorities"]);
+  const [preferencesUserId, setPreferencesUserId] = useState<string | null>(null);
+  const [preferencesReady, setPreferencesReady] = useState(false);
 
   useEffect(() => {
     const now = new Date();
@@ -83,12 +90,42 @@ export function TodoHome() {
     });
     return () => window.cancelAnimationFrame(frame);
   }, []);
+  useEffect(() => {
+    let active = true;
+    const supabase = createSupabaseBrowserClient();
+    void supabase.auth.getUser().then(({ data, error: authError }) => {
+      if (!active) return;
+      const userId = authError ? null : data.user?.id ?? null;
+      setPreferencesUserId(userId);
+      if (userId) {
+        try {
+          const stored = window.localStorage.getItem(dashboardPreferencesKey(userId));
+          if (stored !== null) setExpandedSections(parseExpandedDashboardSections(stored));
+        } catch {
+          // The dashboard remains usable when browser storage is unavailable.
+        }
+      }
+      setPreferencesReady(true);
+    }).catch(() => {
+      if (active) setPreferencesReady(true);
+    });
+    return () => { active = false; };
+  }, []);
+  useEffect(() => {
+    if (!preferencesReady || !preferencesUserId) return;
+    try {
+      window.localStorage.setItem(dashboardPreferencesKey(preferencesUserId), serializeExpandedDashboardSections(expandedSections));
+    } catch {
+      // Storage is a presentation preference; failures must not affect task data.
+    }
+  }, [expandedSections, preferencesReady, preferencesUserId]);
   const visibleTasks = useMemo(() => tasks.map((task) => optimisticTasks.get(task.id) ?? task), [tasks, optimisticTasks]);
   const activeTask = visibleTasks.find((task) => task.id === selectedTaskId) ?? null;
   const selectedList = lists.find((list) => list.id === (activeTask?.list_id ?? selectedListId));
   const selectedWorkspace = workspaces.find((workspace) => workspace.id === activeTask?.workspace_id);
   const metrics = useMemo(() => today ? calculateTodoDashboardMetrics(visibleTasks, today) : null, [visibleTasks, today]);
   const activeView = selectedDate ? "today" : view;
+  const overviewMode = view === "overview" && selectedDate === null;
 
   const filteredTasks = useMemo(() => {
     let result = visibleTasks;
@@ -107,6 +144,20 @@ export function TodoHome() {
   }, [filteredTasks, searchText]);
 
   const todayTasks = useMemo(() => today ? sortTasks(visibleTasks.filter((task) => isTaskActiveOn(task, today))) : [], [visibleTasks, today]);
+  const overviewTasks = useMemo(() => today ? sortTasks(visibleTasks.filter((task) => {
+    if (isTaskScheduledOn(task, today) || isTaskActiveOn(task, today)) return true;
+    return task.status === "done" && task.completed_at !== null && localDateKey(new Date(task.completed_at)) === today;
+  })) : [], [visibleTasks, today]);
+  const overviewPriorities = todayTasks.slice(0, 3);
+  const overviewPriorityIds = useMemo(() => new Set(overviewPriorities.map((task) => task.id)), [overviewPriorities]);
+  const remainingOverviewTasks = useMemo(() => overviewTasks.filter((task) => !overviewPriorityIds.has(task.id)), [overviewTasks, overviewPriorityIds]);
+  const personalList = lists.find((list) => list.slug === "pessoal");
+  const workList = lists.find((list) => list.slug === "trabalho");
+  const overviewCategories = [
+    { id: "list:pessoal", title: "Pessoal", icon: <UserRound aria-hidden="true" className="size-4" />, tasks: remainingOverviewTasks.filter((task) => task.list_id === personalList?.id) },
+    { id: "list:trabalho", title: "Trabalho", icon: <BriefcaseBusiness aria-hidden="true" className="size-4" />, tasks: remainingOverviewTasks.filter((task) => task.list_id === workList?.id) },
+    { id: "list:outras", title: "Outras listas", icon: <Folder aria-hidden="true" className="size-4" />, tasks: remainingOverviewTasks.filter((task) => task.list_id !== personalList?.id && task.list_id !== workList?.id) },
+  ];
   const selectedDayTasks = useMemo(() => selectedDate ? sortTasks(visibleTasks.filter((task) => isTaskScheduledOn(task, selectedDate) || isTaskActiveOn(task, selectedDate))) : [], [visibleTasks, selectedDate]);
   const deadlines = useMemo(() => {
     if (!today) return [];
@@ -122,6 +173,8 @@ export function TodoHome() {
     today: selectedDate ? `Tarefas de ${formatDayAndMonth(selectedDate)}` : "Prioridades de hoje",
     all: "Todas as tarefas",
     completed: "Tarefas concluídas",
+    recurring: "Tarefas recorrentes",
+    "weekly-review": "Revisão semanal",
     lists: "Suas listas",
     workspaces: "Seus workspaces",
     list: activeListName ?? "Tarefas da lista",
@@ -161,6 +214,12 @@ export function TodoHome() {
     setView("today");
   }
 
+  function updateExpandedSection(value: string, open: boolean) {
+    setExpandedSections((current) => open
+      ? current.includes(value) ? current : [...current, value]
+      : current.filter((item) => item !== value));
+  }
+
   if (loading && !today) return <DashboardSkeleton />;
   if (loading) return <DashboardSkeleton />;
   if (error) return <main className="mx-auto w-full max-w-3xl p-4 pt-10 sm:p-8"><Alert variant="destructive"><AlertTitle>Não foi possível carregar o To-Do</AlertTitle><AlertDescription className="mt-2 flex flex-wrap items-center justify-between gap-3">{error}<Button variant="outline" size="sm" onClick={() => void refreshAll()} disabled={refreshing}><RefreshCw className={cn("size-4", refreshing && "animate-spin")} /> Tentar novamente</Button></AlertDescription></Alert></main>;
@@ -179,34 +238,75 @@ export function TodoHome() {
   });
   return (
     <>
-      <main className="mx-auto grid w-full max-w-[110rem] min-w-0 gap-5 p-4 sm:p-6 xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-6 xl:p-7">
+      <main className={cn("mx-auto grid w-full max-w-[110rem] min-w-0 gap-5 p-4 sm:p-6 xl:gap-6 xl:p-7", overviewMode && !showAgenda ? "grid-cols-1" : "xl:grid-cols-[minmax(0,1fr)_20rem]")}>
         <div className="min-w-0 space-y-5">
           <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Minhas tarefas</p>
-              <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Organize seu dia com clareza</h1>
-              <p className="mt-2 text-sm text-muted-foreground">{greeting}. {formatDateLong(today)}.</p>
-              <p className="mt-1 text-sm text-muted-foreground">Planeje, foque e avance nos seus objetivos.</p>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">{overviewMode ? "Módulo de tarefas" : "Minhas tarefas"}</p>
+              <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">{overviewMode ? "Visão geral" : "Organize seu dia com clareza"}</h1>
+              <p className="mt-2 text-sm text-muted-foreground">{overviewMode ? "Menos ruído, mais clareza para o seu dia." : `${greeting}. ${formatDateLong(today)}.`}</p>
+              {!overviewMode ? <p className="mt-1 text-sm text-muted-foreground">Planeje, foque e avance nos seus objetivos.</p> : null}
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <Button variant="outline" size="icon" aria-label="Atualizar tarefas" title="Atualizar" onClick={() => void refreshAll()} disabled={refreshing}>{refreshing ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}</Button>
+              {overviewMode ? <Button variant="outline" aria-expanded={showAgenda} onClick={() => setShowAgenda((current) => !current)}><CalendarDays aria-hidden="true" />{showAgenda ? "Ocultar agenda" : "Ver agenda"}</Button> : null}
               <Button onClick={() => setFormOpen(true)}><Plus aria-hidden="true" /> Nova tarefa</Button>
             </div>
           </section>
 
-          <section aria-label="Resumo de tarefas" className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
-            <MetricCard icon={<ListTodo aria-hidden="true" />} value={metrics.total} label="Tarefas no total" detail={`${tasks.filter((task) => task.status !== "done").length} em aberto`} />
-            <MetricCard icon={<CalendarDays aria-hidden="true" />} value={metrics.today} label="Para hoje" detail="Com prazo ou atividade hoje" />
-            <MetricCard icon={<CheckCircle2 aria-hidden="true" />} value={metrics.completed} label="Concluídas" detail="Tarefas concluídas" tone="green" />
-            <Card className="min-w-0 shadow-none">
-              <CardHeader className="space-y-2 p-4 pb-2"><div className="flex items-center justify-between gap-2"><CardDescription>Seu progresso da semana</CardDescription><Sparkles aria-hidden="true" className="size-4 text-primary" /></div><div className="flex items-baseline gap-2"><span className="text-2xl font-bold tabular-nums">{metrics.weekPercent}%</span><span className="text-xs text-muted-foreground">{metrics.weekCompleted} de {metrics.weekTotal}</span></div></CardHeader>
-              <CardContent className="px-4 pb-4"><Progress value={metrics.weekPercent} aria-label={`Progresso semanal: ${metrics.weekPercent}%`} /><p className="mt-2 text-xs text-muted-foreground">Tarefas da semana concluídas</p></CardContent>
-            </Card>
+          <section aria-label="Resumo de tarefas" className={cn("grid gap-3", overviewMode ? "sm:grid-cols-3" : "sm:grid-cols-2 2xl:grid-cols-4")}>
+            {overviewMode ? <>
+              <MetricCard icon={<CalendarDays aria-hidden="true" />} value={metrics.today} label="Hoje" detail="Tarefas previstas para hoje" />
+              <MetricCard icon={<ListTodo aria-hidden="true" />} value={visibleTasks.filter((task) => task.status !== "done").length} label="Pendentes" detail="Em todas as listas" tone="red" />
+              <MetricCard icon={<CheckCircle2 aria-hidden="true" />} value={metrics.weekCompleted} label="Concluídas na semana" detail="Desde segunda-feira" tone="green" />
+            </> : <>
+              <MetricCard icon={<ListTodo aria-hidden="true" />} value={metrics.total} label="Tarefas no total" detail={`${tasks.filter((task) => task.status !== "done").length} em aberto`} />
+              <MetricCard icon={<CalendarDays aria-hidden="true" />} value={metrics.today} label="Para hoje" detail="Com prazo ou atividade hoje" />
+              <MetricCard icon={<CheckCircle2 aria-hidden="true" />} value={metrics.completed} label="Concluídas" detail="Tarefas concluídas" tone="green" />
+              <Card className="min-w-0 shadow-none">
+                <CardHeader className="space-y-2 p-4 pb-2"><div className="flex items-center justify-between gap-2"><CardDescription>Seu progresso da semana</CardDescription></div><div className="flex items-baseline gap-2"><span className="text-2xl font-bold tabular-nums">{metrics.weekPercent}%</span><span className="text-xs text-muted-foreground">{metrics.weekCompleted} de {metrics.weekTotal}</span></div></CardHeader>
+                <CardContent className="px-4 pb-4"><Progress value={metrics.weekPercent} aria-label={`Progresso semanal: ${metrics.weekPercent}%`} /><p className="mt-2 text-xs text-muted-foreground">Tarefas da semana concluídas</p></CardContent>
+              </Card>
+            </>}
           </section>
+
+          {overviewMode ? <section aria-label="Tarefas relevantes de hoje" className="space-y-3">
+            <Accordion multiple value={expandedSections.includes("overview:priorities") ? ["overview:priorities"] : []} onValueChange={(next) => updateExpandedSection("overview:priorities", next.includes("overview:priorities"))}>
+              <AccordionItem value="overview:priorities" className="overflow-hidden rounded-xl border bg-card shadow-none">
+                <AccordionHeader><AccordionTrigger className="min-h-14 px-3 py-2.5 sm:px-4"><span className="flex min-w-0 flex-1 items-center gap-3"><Target aria-hidden="true" className="size-4 shrink-0 text-primary" /><span className="truncate font-semibold">Prioridades de hoje</span><Badge variant="secondary" className="shrink-0 tabular-nums">{overviewPriorities.length}</Badge></span></AccordionTrigger></AccordionHeader>
+                <AccordionPanel className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-top-1 motion-safe:duration-150 px-3 pb-3 sm:px-4 sm:pb-4">
+                  {overviewPriorities.length ? <div className="divide-y rounded-lg border">{overviewPriorities.map((task) => <OverviewTaskRow key={task.id} task={task} listName={lists.find((list) => list.id === task.list_id)?.name} saving={savingTaskIds.has(task.id)} onToggle={() => void toggleComplete(task)} onOpen={() => setSelectedTaskId(task.id)} />)}</div> : <CompactEmpty message={visibleTasks.some((task) => task.status !== "done") ? "Nenhuma tarefa prevista para hoje." : "Nenhuma tarefa pendente."} onAdd={() => setFormOpen(true)} />}
+                </AccordionPanel>
+              </AccordionItem>
+            </Accordion>
+
+            {overviewCategories.map((category) => {
+              const categoryOpen = expandedSections.includes(category.id);
+              return <Accordion key={category.id} multiple value={categoryOpen ? [category.id] : []} onValueChange={(next) => updateExpandedSection(category.id, next.includes(category.id))}>
+                <AccordionItem value={category.id} className="overflow-hidden rounded-xl border bg-card shadow-none">
+                  <AccordionHeader><AccordionTrigger className="min-h-14 px-3 py-2.5 sm:px-4"><span className="flex min-w-0 flex-1 items-center gap-3"><span className="shrink-0 text-muted-foreground">{category.icon}</span><span className="truncate font-semibold">{category.title}</span><Badge variant="secondary" className="shrink-0 tabular-nums">{category.tasks.length}</Badge></span></AccordionTrigger></AccordionHeader>
+                  <AccordionPanel className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-top-1 motion-safe:duration-150 space-y-2 px-3 pb-3 sm:px-4 sm:pb-4">
+                    {category.tasks.length === 0 ? <CompactEmpty message={overviewTasks.length > 0 && remainingOverviewTasks.length === 0 ? "As prioridades de hoje estão destacadas acima." : "Nenhuma tarefa para hoje nesta lista."} onAdd={() => setFormOpen(true)} /> : (["todo", "in_progress", "done"] as const).filter((status) => status === "todo" || category.tasks.some((task) => task.status === status)).map((status) => {
+                      const statusId = `${category.id}:status:${status}`;
+                      const statusTasks = category.tasks.filter((task) => task.status === status);
+                      const label = status === "todo" ? "Pendentes" : status === "in_progress" ? "Em andamento" : "Concluídas";
+                      const icon = status === "done" ? <CircleCheck aria-hidden="true" className="size-4" /> : status === "in_progress" ? <CircleDot aria-hidden="true" className="size-4" /> : <Circle aria-hidden="true" className="size-4" />;
+                      return <Accordion key={statusId} multiple value={expandedSections.includes(statusId) ? [statusId] : []} onValueChange={(next) => updateExpandedSection(statusId, next.includes(statusId))}>
+                        <AccordionItem value={statusId} className="overflow-hidden rounded-lg border bg-background">
+                          <AccordionHeader><AccordionTrigger className="min-h-11 px-3 py-2"><span className="flex min-w-0 flex-1 items-center gap-2.5"><span className="text-muted-foreground">{icon}</span><span className="truncate text-sm font-medium">{label}</span><span className="text-xs tabular-nums text-muted-foreground">{statusTasks.length}</span></span></AccordionTrigger></AccordionHeader>
+                          <AccordionPanel className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-top-1 motion-safe:duration-150 px-2 pb-2 sm:px-3">{statusTasks.length ? <div className="divide-y rounded-md border">{statusTasks.map((task) => <OverviewTaskRow key={task.id} task={task} listName={lists.find((list) => list.id === task.list_id)?.name} saving={savingTaskIds.has(task.id)} onToggle={() => void toggleComplete(task)} onOpen={() => setSelectedTaskId(task.id)} />)}</div> : <CompactEmpty message={status === "todo" ? "Nenhuma tarefa pendente." : status === "in_progress" ? "Nenhuma tarefa em andamento." : "Nenhuma tarefa concluída hoje."} onAdd={() => setFormOpen(true)} />}</AccordionPanel>
+                        </AccordionItem>
+                      </Accordion>;
+                    })}
+                  </AccordionPanel>
+                </AccordionItem>
+              </Accordion>;
+            })}
+          </section> : null}
 
           {view === "lists" ? <Card><CardHeader><CardTitle className="text-base">Suas listas</CardTitle><CardDescription>Escolha uma lista para ver as tarefas.</CardDescription></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{lists.length ? lists.map((list) => <Button key={list.id} variant="outline" className="h-auto justify-start gap-3 p-4" onClick={() => { setSelectedListId(list.id); setSelectedWorkspaceId(null); setView("list"); }}><ListTodo className="size-4 shrink-0 text-primary" /><span className="min-w-0 flex-1 truncate text-left">{list.name}</span><Badge variant="secondary">{visibleTasks.filter((task) => task.list_id === list.id && task.status !== "done").length}</Badge></Button>) : <EmptyMessage title="Nenhuma lista disponível" description="As listas pessoais serão exibidas aqui quando estiverem prontas." />}</CardContent></Card> : view === "workspaces" ? <Card><CardHeader><CardTitle className="text-base">Seus workspaces</CardTitle><CardDescription>Projetos organizados por espaço.</CardDescription></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{workspaces.length ? workspaces.map((workspace) => <Button key={workspace.id} variant="outline" className="h-auto justify-start gap-3 p-4" onClick={() => { setSelectedWorkspaceId(workspace.id); setSelectedListId(null); setView("workspace"); }}><Avatar className="size-8"><AvatarFallback><BriefcaseBusiness className="size-4" /></AvatarFallback></Avatar><span className="min-w-0 flex-1 truncate text-left">{workspace.name}</span><Badge variant="secondary">{visibleTasks.filter((task) => task.workspace_id === workspace.id && task.status !== "done").length}</Badge></Button>) : <EmptyMessage title="Nenhum workspace disponível" description="Workspaces vinculados às suas tarefas aparecerão aqui." />}</CardContent></Card> : null}
 
-          {view !== "lists" && view !== "workspaces" ? <Card className="min-w-0 shadow-none">
+          {view !== "lists" && view !== "workspaces" && !overviewMode ? <Card className="min-w-0 shadow-none">
             <CardHeader className="flex flex-col gap-3 space-y-0 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <div className="min-w-0"><CardTitle className="text-base">{sectionTitle[view]}</CardTitle><CardDescription className="mt-1">{activeView === "overview" && !selectedDate ? "Foque no que realmente importa para avançar." : selectedDate ? formatDateLong(selectedDate) : "Tarefas organizadas a partir dos seus registros."}</CardDescription></div>
               {filteredTasks.length ? <Badge variant="secondary" className="w-fit">{filteredTasks.length} {filteredTasks.length === 1 ? "tarefa" : "tarefas"}</Badge> : null}
@@ -239,7 +339,7 @@ export function TodoHome() {
           </Card> : null}
         </div>
 
-        <aside className="min-w-0 space-y-5">
+        {(!overviewMode || showAgenda) ? <aside className="min-w-0 space-y-5">
           <Card className="shadow-none">
             <CardHeader className="space-y-4 p-4 pb-2">
               <div className="flex items-center justify-between gap-2"><div><CardTitle className="text-base">Calendário</CardTitle><CardDescription className="mt-1">Datas com tarefas</CardDescription></div><Button variant="ghost" size="sm" onClick={() => today && chooseDate(localDateFromKey(today))}>Hoje</Button></div>
@@ -267,7 +367,7 @@ export function TodoHome() {
               {!selectedDate && deadlines.length > 0 ? <Button variant="ghost" size="sm" className="mt-3 w-full justify-between" onClick={() => setView("all")}>Ver todas as tarefas <ArrowRight className="size-4" /></Button> : null}
             </CardContent>
           </Card>
-        </aside>
+        </aside> : null}
       </main>
 
       <TodoTaskFormDialog open={formOpen} onOpenChange={setFormOpen} lists={lists} workspaces={workspaces} initialDate={selectedDate ?? today} onCreated={refreshAll} />
@@ -276,8 +376,34 @@ export function TodoHome() {
   );
 }
 
-function MetricCard({ icon, value, label, detail, tone }: { icon: ReactNode; value: number; label: string; detail: string; tone?: "green" }) {
-  return <Card className="min-w-0 shadow-none"><CardHeader className="space-y-2 p-4 pb-1"><div className="flex items-center justify-between gap-2"><CardDescription>{label}</CardDescription><span className={cn("grid size-8 place-items-center rounded-lg bg-primary/10 text-primary", tone === "green" && "bg-emerald-500/10 text-emerald-600")}>{icon}</span></div><CardTitle className="text-2xl tabular-nums">{value}</CardTitle></CardHeader><CardContent className="px-4 pb-4 text-xs text-muted-foreground">{detail}</CardContent></Card>;
+function OverviewTaskRow({ task, listName, saving, onToggle, onOpen }: { task: TodoTask; listName?: string; saving: boolean; onToggle: () => void; onOpen: () => void }) {
+  const time = taskTime(task);
+  return <div className="flex min-w-0 items-center gap-2.5 px-2.5 py-2.5 sm:gap-3 sm:px-3">
+    <Button variant="ghost" size="icon" className="size-8 shrink-0 rounded-full" aria-label={task.status === "done" ? `Reabrir ${task.title}` : `Concluir ${task.title}`} aria-pressed={task.status === "done"} disabled={saving} onClick={onToggle}>
+      {saving ? <LoaderCircle className="size-4 animate-spin" /> : task.status === "done" ? <CheckCircle2 className="size-5 text-emerald-600" /> : <Circle className="size-5 text-muted-foreground" />}
+    </Button>
+    <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <span className={cn("block break-words text-sm font-medium", task.status === "done" && "text-muted-foreground line-through")}>{task.title}</span>
+      <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+        {task.description?.trim() ? <span className="max-w-full truncate">{task.description.trim()}</span> : null}
+        {listName ? <span className="truncate">{listName}</span> : null}
+        {time ? <span className="inline-flex shrink-0 items-center gap-1"><Clock3 aria-hidden="true" className="size-3" />{time}</span> : null}
+      </span>
+    </button>
+    <Badge variant={task.priority === "high" ? "destructive" : task.priority === "medium" ? "secondary" : "outline"} className="hidden shrink-0 sm:inline-flex">{priorityText(task.priority)}</Badge>
+    <Button variant="ghost" size="icon" className="size-8 shrink-0" aria-label={`Abrir detalhes: ${task.title}`} onClick={onOpen}><ArrowRight aria-hidden="true" className="size-4" /></Button>
+  </div>;
+}
+
+function CompactEmpty({ message = "Nenhuma tarefa pendente.", onAdd }: { message?: string; onAdd: () => void }) {
+  return <div className="flex min-h-10 items-center justify-between gap-3 px-2 py-2 text-sm text-muted-foreground">
+    <span>{message}</span>
+    <Button variant="ghost" size="sm" className="h-8 shrink-0 px-2" onClick={onAdd}><Plus aria-hidden="true" className="size-4" />Adicionar tarefa</Button>
+  </div>;
+}
+
+function MetricCard({ icon, value, label, detail, tone }: { icon: ReactNode; value: number; label: string; detail: string; tone?: "green" | "red" }) {
+  return <Card className="min-w-0 shadow-none"><CardHeader className="space-y-2 p-4 pb-1"><div className="flex items-center justify-between gap-2"><CardDescription>{label}</CardDescription><span className={cn("grid size-8 place-items-center rounded-lg bg-primary/10 text-primary", tone === "green" && "bg-emerald-500/10 text-emerald-600", tone === "red" && "bg-destructive/10 text-destructive")}>{icon}</span></div><CardTitle className="text-2xl tabular-nums">{value}</CardTitle></CardHeader><CardContent className="px-4 pb-4 text-xs text-muted-foreground">{detail}</CardContent></Card>;
 }
 
 function EmptyMessage({ title, description, action }: { title: string; description: string; action?: ReactNode }) {

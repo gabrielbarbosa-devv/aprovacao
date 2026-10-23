@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Check, Clock3, Ellipsis, ListTodo, Trash2 } from "lucide-react";
+import { Archive, CalendarDays, Check, Clock3, Ellipsis, ListTodo, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -56,7 +56,8 @@ export function TodoTaskRow({ task, lists, overdue = false, saving, onToggle, on
         <DropdownMenuItem onClick={() => onOpen(task)}>Abrir detalhes</DropdownMenuItem>
         <DropdownMenuSub><DropdownMenuSubTrigger><Check aria-hidden="true" />Prioridade</DropdownMenuSubTrigger><DropdownMenuSubContent>{priorityOptions.map((item) => <DropdownMenuItem key={item.value} disabled={task.priority === item.value || saving} onClick={() => onPriority(task, item.value)}>{task.priority === item.value ? <Check aria-hidden="true" /> : null}{item.label}</DropdownMenuItem>)}</DropdownMenuSubContent></DropdownMenuSub>
         <DropdownMenuSub><DropdownMenuSubTrigger><ListTodo aria-hidden="true" />Mover para lista</DropdownMenuSubTrigger><DropdownMenuSubContent>{lists.map((list) => <DropdownMenuItem key={list.id} disabled={list.id === task.list_id || saving} onClick={() => onMove(task, list.id)}>{list.id === task.list_id ? <Check aria-hidden="true" /> : null}{list.name}</DropdownMenuItem>)}</DropdownMenuSubContent></DropdownMenuSub>
-        <DropdownMenuItem variant="destructive" onClick={() => onDelete(task)}><Trash2 aria-hidden="true" />Excluir tarefa</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onDelete(task)}><Archive aria-hidden="true" />Arquivar…</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onDelete(task)}><Trash2 aria-hidden="true" />Mover para a lixeira…</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   </article>;

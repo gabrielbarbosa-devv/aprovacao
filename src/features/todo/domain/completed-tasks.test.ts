@@ -18,7 +18,7 @@ function task(id: string, overrides: Partial<TodoTask> = {}): TodoTask {
     id, user_id: "user-1", list_id: "personal", workspace_id: null,
     title: id, description: null, status: "todo", priority: "medium",
     starts_on: today, due_on: null, due_at: null, completed_at: null,
-    position: 0, created_at: `${today}T12:00:00.000Z`, updated_at: `${today}T12:00:00.000Z`, deleted_at: null,
+    position: 0, recurrence_rule_id: null, recurrence_on: null, created_at: `${today}T12:00:00.000Z`, updated_at: `${today}T12:00:00.000Z`, deleted_at: null, archived_at: null,
     ...overrides,
   };
 }
