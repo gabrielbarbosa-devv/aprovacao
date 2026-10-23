@@ -1,13 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowLeft, BriefcaseBusiness, CalendarDays, CheckCircle2, CheckSquare2,
   ChevronDown, CircleDot, Home, Layers3, ListTodo, PanelLeftClose,
-  Plus, RefreshCw, UserRound, ClipboardCheck,
+  Plus, RefreshCw, UserRound, ClipboardCheck, MoreHorizontal,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,10 @@ import {
   todoSidebarStorageKey, type TodoSidebarGroup, type TodoSidebarPreferences,
 } from "@/features/todo/domain/sidebar-preferences";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { todoListAction } from "@/features/todo/actions";
 
 function initials(email: string): string {
   const parts = email.split("@")[0]?.split(/[._-]+/).filter(Boolean) ?? [];
@@ -38,8 +43,6 @@ const mainNavigation: { view: TodoDashboardView; label: string; icon: typeof Hom
   { view: "today", label: "Hoje", icon: CalendarDays, href: "/todo/today" },
   { view: "all", label: "Todas as tarefas", icon: ListTodo, href: "/todo/all" },
   { view: "completed", label: "Concluídas", icon: CheckCircle2, href: "/todo/completed" },
-  { view: "recurring", label: "Recorrentes", icon: RefreshCw, href: "/todo/recurring" },
-  { view: "weekly-review", label: "Revisão semanal", icon: ClipboardCheck, href: "/todo/weekly-review" },
 ];
 
 function TodoSidebarContent({
@@ -54,9 +57,10 @@ function TodoSidebarContent({
   const pathname = usePathname();
   const router = useRouter();
   const { isMobile, setOpen, setOpenMobile, state } = useSidebar();
+  const [createListOpen, setCreateListOpen] = useState(false);
   const compact = state === "collapsed" && !isMobile;
   const {
-    lists, tasks, workspaces, loading, view, setView,
+    lists, tasks, workspaces, loading, view, setView, refreshAll,
     selectedListId, selectedWorkspaceId, setSelectedListId, setSelectedWorkspaceId, setSelectedDate,
   } = useTodoDashboardData();
   const openCount = (listId: string) => tasks.filter((task) => task.list_id === listId && task.status !== "done").length;
@@ -88,6 +92,33 @@ function TodoSidebarContent({
     setView("overview");
     router.push(`/todo/workspaces/${workspaceId}`);
     closeMobile();
+  };
+
+  const createList = async (name: string): Promise<boolean> => {
+    const baseSlug = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 100) || "lista";
+    const usedSlugs = new Set(lists.map((list) => list.slug));
+    let slug = baseSlug;
+    let suffix = 2;
+    while (usedSlugs.has(slug)) slug = `${baseSlug.slice(0, 96)}-${suffix++}`;
+    const position = lists.reduce((max, list) => Math.max(max, list.position), -1) + 1;
+    const result = await todoListAction({ operation: "create", name, slug, icon: "list", color: "blue", position });
+    if (!result.ok) {
+      toast.error(result.message);
+      return false;
+    }
+    if (!result.data || typeof result.data !== "object" || !("id" in result.data)) {
+      toast.error("A lista foi criada, mas não foi possível abrir seus dados.");
+      return false;
+    }
+    try {
+      await refreshAll();
+    } catch {
+      toast.warning("A lista foi criada, mas a navegação precisa ser atualizada.");
+    }
+    toast.success("Lista criada.");
+    setCreateListOpen(false);
+    navigateList(result.data.id);
+    return true;
   };
 
   const isMainActive = (itemView: TodoDashboardView) => itemView === "today"
@@ -156,6 +187,15 @@ function TodoSidebarContent({
                   const active = isMainActive(itemView);
                   return <SidebarMenuItem key={itemView}><SidebarMenuButton type="button" onClick={() => navigate(href, itemView)} isActive={active} aria-current={active ? "page" : undefined} tooltip={label} className="h-10 px-3 font-medium"><Icon aria-hidden="true" /><span>{label}</span></SidebarMenuButton></SidebarMenuItem>;
                 })}
+                <SidebarMenuItem>
+                  <Popover>
+                    <PopoverTrigger render={<SidebarMenuButton type="button" tooltip="Mais" aria-label="Abrir ferramentas adicionais" className="h-10 px-3 font-medium"><MoreHorizontal aria-hidden="true" /><span>Mais</span></SidebarMenuButton>} />
+                    <PopoverContent side={compact ? "right" : "bottom"} align="start" className="w-56 p-2">
+                      <p className="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Mais ferramentas</p>
+                      {([{ view: "recurring" as const, label: "Recorrentes", icon: RefreshCw, href: "/todo/recurring" }, { view: "weekly-review" as const, label: "Revisão semanal", icon: ClipboardCheck, href: "/todo/weekly-review" }]).map(({ view: itemView, label, icon: Icon, href }) => <Button key={itemView} variant="ghost" className="h-9 w-full justify-start" onClick={() => navigate(href, itemView)}><Icon aria-hidden="true" />{label}{pathname === href ? <span className="sr-only">, página atual</span> : null}</Button>)}
+                    </PopoverContent>
+                  </Popover>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           )}
@@ -171,7 +211,7 @@ function TodoSidebarContent({
                   <p className="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Listas</p>
                   {lists.map((list) => <Button key={list.id} variant="ghost" className="h-9 w-full justify-start" onClick={() => navigateList(list.id)}>{list.name}<Badge variant="secondary" className="ml-auto">{openCount(list.id)}</Badge></Button>)}
                   <Button variant="ghost" className="h-9 w-full justify-start" onClick={() => navigate("/todo", "lists")}><Layers3 aria-hidden="true" />Ver listas</Button>
-                  <Button variant="ghost" className="h-9 w-full justify-start" disabled title="A criação de listas ainda não está disponível"><Plus aria-hidden="true" />Criar lista</Button>
+                  <Button variant="ghost" className="h-9 w-full justify-start" onClick={() => setCreateListOpen(true)}><Plus aria-hidden="true" />Criar lista</Button>
                 </PopoverContent>
               </Popover>
             </SidebarMenuItem></SidebarMenu></SidebarGroupContent>
@@ -182,7 +222,7 @@ function TodoSidebarContent({
                 return <SidebarMenuItem key={list.id}><SidebarMenuButton type="button" onClick={() => navigateList(list.id)} isActive={active} aria-current={active ? "page" : undefined} tooltip={list.name} className="h-9 px-3"><ListTodo aria-hidden="true" /><span>{list.name}</span><Badge variant="secondary" className="ml-auto h-5 min-w-6 justify-center px-1 text-[10px] group-data-[collapsible=icon]:hidden">{openCount(list.id)}</Badge></SidebarMenuButton></SidebarMenuItem>;
               })}
               <SidebarMenuItem><SidebarMenuButton type="button" onClick={() => navigate("/todo", "lists")} isActive={view === "lists"} aria-current={view === "lists" ? "page" : undefined} tooltip="Ver listas" className="h-9 px-3 text-muted-foreground"><Layers3 aria-hidden="true" /><span>Ver listas</span></SidebarMenuButton></SidebarMenuItem>
-              <SidebarMenuItem><SidebarMenuButton type="button" disabled title="A criação de listas ainda não está disponível" tooltip="Criar lista (em breve)" className="h-9 px-3 text-muted-foreground"><Plus aria-hidden="true" /><span>Criar lista</span></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton type="button" onClick={() => setCreateListOpen(true)} tooltip="Criar lista" className="h-9 px-3 text-muted-foreground"><Plus aria-hidden="true" /><span>Criar lista</span></SidebarMenuButton></SidebarMenuItem>
             </SidebarMenu></SidebarGroupContent>
           )}
         </SidebarGroup>
@@ -224,8 +264,38 @@ function TodoSidebarContent({
           <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden"><p className="truncate text-xs font-semibold">{email}</p><p className="mt-0.5 text-[11px] text-muted-foreground">Conta autenticada</p></div>
         </div>
       </SidebarFooter>
+      <CreateTodoListDialog open={createListOpen} onOpenChange={setCreateListOpen} onCreate={createList} />
     </>
   );
+}
+
+function CreateTodoListDialog({ open, onOpenChange, onCreate }: { open: boolean; onOpenChange: (open: boolean) => void; onCreate: (name: string) => Promise<boolean> }) {
+  const [name, setName] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalizedName = name.trim();
+    if (!normalizedName || saving) return;
+    setSaving(true);
+    try {
+      if (await onCreate(normalizedName)) setName("");
+    } catch {
+      toast.error("Não foi possível criar a lista. Tente novamente.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return <Dialog open={open} onOpenChange={(nextOpen) => { if (!saving) { onOpenChange(nextOpen); if (!nextOpen) setName(""); } }}>
+    <DialogContent className="sm:max-w-md">
+      <DialogHeader><DialogTitle>Nova lista</DialogTitle><DialogDescription>Dê um nome para organizar suas tarefas.</DialogDescription></DialogHeader>
+      <form className="space-y-4" onSubmit={(event) => void submit(event)}>
+        <div className="space-y-2"><Label htmlFor="todo-create-list-name">Nome</Label><Input id="todo-create-list-name" autoFocus autoComplete="off" required maxLength={80} value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex.: Casa, Estudos, Viagens" /></div>
+        <DialogFooter><Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancelar</Button><Button type="submit" disabled={!name.trim() || saving}>{saving ? "Criando…" : "Criar lista"}</Button></DialogFooter>
+      </form>
+    </DialogContent>
+  </Dialog>;
 }
 
 function TodoLayoutContent({ children, email, userId }: { children: ReactNode; email: string; userId: string }) {

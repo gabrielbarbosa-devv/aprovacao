@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ArrowDownWideNarrow, ArrowRight, BriefcaseBusiness, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Circle, CircleCheck, CircleDot, Clock3, Folder, ListTodo, LoaderCircle, Plus, RefreshCw, Search, Target, UserRound } from "lucide-react";
+import { ArrowDownWideNarrow, ArrowRight, BriefcaseBusiness, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Circle, CircleCheck, CircleDot, Clock3, Folder, ListTodo, LoaderCircle, Plus, RefreshCw, Search, Target, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { todoTaskAction } from "@/features/todo/actions";
 import { TodoTaskFormDialog } from "@/features/todo/components/todo-task-form-dialog";
@@ -16,7 +16,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionHeader, AccordionItem, AccordionPanel, AccordionTrigger } from "@/components/ui/accordion";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -126,6 +125,7 @@ export function TodoHome() {
   const metrics = useMemo(() => today ? calculateTodoDashboardMetrics(visibleTasks, today) : null, [visibleTasks, today]);
   const activeView = selectedDate ? "today" : view;
   const overviewMode = view === "overview" && selectedDate === null;
+  const agendaOpen = showAgenda || selectedDate !== null;
 
   const filteredTasks = useMemo(() => {
     let result = visibleTasks;
@@ -238,7 +238,7 @@ export function TodoHome() {
   });
   return (
     <>
-      <main className={cn("mx-auto grid w-full max-w-[110rem] min-w-0 gap-5 p-4 sm:p-6 xl:gap-6 xl:p-7", overviewMode && !showAgenda ? "grid-cols-1" : "xl:grid-cols-[minmax(0,1fr)_20rem]")}>
+      <main className={cn("mx-auto grid w-full max-w-[110rem] min-w-0 gap-5 p-4 sm:p-6 xl:gap-6 xl:p-7", agendaOpen ? "xl:grid-cols-[minmax(0,1fr)_20rem]" : "grid-cols-1")}>
         <div className="min-w-0 space-y-5">
           <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div className="min-w-0">
@@ -249,7 +249,7 @@ export function TodoHome() {
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <Button variant="outline" size="icon" aria-label="Atualizar tarefas" title="Atualizar" onClick={() => void refreshAll()} disabled={refreshing}>{refreshing ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}</Button>
-              {overviewMode ? <Button variant="outline" aria-expanded={showAgenda} onClick={() => setShowAgenda((current) => !current)}><CalendarDays aria-hidden="true" />{showAgenda ? "Ocultar agenda" : "Ver agenda"}</Button> : null}
+              {view !== "list" && view !== "workspace" && view !== "lists" && view !== "workspaces" ? <Button variant="outline" aria-expanded={agendaOpen} onClick={() => { setShowAgenda(!agendaOpen); if (selectedDate) setSelectedDate(null); }}><CalendarDays aria-hidden="true" />{agendaOpen ? "Ocultar agenda" : "Ver agenda"}</Button> : null}
               <Button onClick={() => setFormOpen(true)}><Plus aria-hidden="true" /> Nova tarefa</Button>
             </div>
           </section>
@@ -260,13 +260,9 @@ export function TodoHome() {
               <MetricCard icon={<ListTodo aria-hidden="true" />} value={visibleTasks.filter((task) => task.status !== "done").length} label="Pendentes" detail="Em todas as listas" tone="red" />
               <MetricCard icon={<CheckCircle2 aria-hidden="true" />} value={metrics.weekCompleted} label="Concluídas na semana" detail="Desde segunda-feira" tone="green" />
             </> : <>
-              <MetricCard icon={<ListTodo aria-hidden="true" />} value={metrics.total} label="Tarefas no total" detail={`${tasks.filter((task) => task.status !== "done").length} em aberto`} />
+              <MetricCard icon={<ListTodo aria-hidden="true" />} value={visibleTasks.filter((task) => task.status !== "done").length} label="Pendentes" detail="Em todas as listas" tone="red" />
               <MetricCard icon={<CalendarDays aria-hidden="true" />} value={metrics.today} label="Para hoje" detail="Com prazo ou atividade hoje" />
               <MetricCard icon={<CheckCircle2 aria-hidden="true" />} value={metrics.completed} label="Concluídas" detail="Tarefas concluídas" tone="green" />
-              <Card className="min-w-0 shadow-none">
-                <CardHeader className="space-y-2 p-4 pb-2"><div className="flex items-center justify-between gap-2"><CardDescription>Seu progresso da semana</CardDescription></div><div className="flex items-baseline gap-2"><span className="text-2xl font-bold tabular-nums">{metrics.weekPercent}%</span><span className="text-xs text-muted-foreground">{metrics.weekCompleted} de {metrics.weekTotal}</span></div></CardHeader>
-                <CardContent className="px-4 pb-4"><Progress value={metrics.weekPercent} aria-label={`Progresso semanal: ${metrics.weekPercent}%`} /><p className="mt-2 text-xs text-muted-foreground">Tarefas da semana concluídas</p></CardContent>
-              </Card>
             </>}
           </section>
 
@@ -339,7 +335,7 @@ export function TodoHome() {
           </Card> : null}
         </div>
 
-        {(!overviewMode || showAgenda) ? <aside className="min-w-0 space-y-5">
+        {agendaOpen ? <aside className="min-w-0 space-y-5">
           <Card className="shadow-none">
             <CardHeader className="space-y-4 p-4 pb-2">
               <div className="flex items-center justify-between gap-2"><div><CardTitle className="text-base">Calendário</CardTitle><CardDescription className="mt-1">Datas com tarefas</CardDescription></div><Button variant="ghost" size="sm" onClick={() => today && chooseDate(localDateFromKey(today))}>Hoje</Button></div>
@@ -407,7 +403,7 @@ function MetricCard({ icon, value, label, detail, tone }: { icon: ReactNode; val
 }
 
 function EmptyMessage({ title, description, action }: { title: string; description: string; action?: ReactNode }) {
-  return <div className="flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed px-5 py-8 text-center"><span className="grid size-10 place-items-center rounded-xl bg-muted text-muted-foreground"><Check className="size-5" /></span><h3 className="mt-3 text-sm font-semibold">{title}</h3><p className="mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>{action ? <div className="mt-4">{action}</div> : null}</div>;
+  return <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/20 px-4 py-3"><div className="min-w-0"><h3 className="text-sm font-medium">{title}</h3><p className="mt-0.5 text-xs text-muted-foreground">{description}</p></div>{action ? <div className="shrink-0">{action}</div> : null}</div>;
 }
 
 function DeadlineRow({ task, listName, onClick }: { task: TodoTask; listName?: string; onClick: () => void }) {
