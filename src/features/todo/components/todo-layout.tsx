@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowLeft, BriefcaseBusiness, CalendarDays, CheckCircle2, CheckSquare2,
-  ChevronDown, CircleDot, Home, Layers3, ListTodo, PanelLeftClose,
+  ChevronDown, CircleDot, Home, Layers3, ListTodo,
   Plus, RefreshCw, UserRound, ClipboardCheck, MoreHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -56,7 +56,7 @@ function TodoSidebarContent({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isMobile, setOpen, setOpenMobile, state } = useSidebar();
+  const { isMobile, setOpenMobile, state } = useSidebar();
   const [createListOpen, setCreateListOpen] = useState(false);
   const compact = state === "collapsed" && !isMobile;
   const {
@@ -159,7 +159,6 @@ function TodoSidebarContent({
               <span className="mt-1 block truncate text-xs text-muted-foreground">Seu espaço pessoal</span>
             </span>
           </Link>
-          {!compact && <SidebarTrigger aria-label="Recolher ou expandir a barra lateral" className="size-8 shrink-0" />}
         </div>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -167,13 +166,6 @@ function TodoSidebarContent({
               <ArrowLeft aria-hidden="true" /><span>Voltar aos módulos</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          {compact && (
-            <SidebarMenuItem>
-              <SidebarMenuButton aria-label="Expandir barra lateral" tooltip="Expandir barra lateral" onClick={() => setOpen(true)} className="h-9 justify-center">
-                <PanelLeftClose aria-hidden="true" className="rotate-180" />
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          )}
         </SidebarMenu>
       </SidebarHeader>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, CircleHelp, Plus, RefreshCw } from "lucide-react";
+import { CheckCircle2, Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { todoTaskAction } from "@/features/todo/actions";
 import { TodoCompletedProductivityChart } from "@/features/todo/components/todo-completed-productivity-chart";
@@ -30,7 +30,7 @@ const periods: { value: TodoCompletedPeriod; label: string }[] = [
 ];
 
 function CompletedTasksSkeleton() {
-  return <main className="mx-auto grid w-full max-w-[110rem] gap-5 p-4 sm:p-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(18rem,.8fr)] xl:p-7"><div className="space-y-5"><div className="space-y-2"><Skeleton className="h-4 w-28" /><Skeleton className="h-9 w-72" /><Skeleton className="h-4 w-56" /></div><Skeleton className="h-24" /><Skeleton className="h-64" /></div><div className="space-y-5"><Skeleton className="h-80" /><Skeleton className="h-48" /></div></main>;
+  return <main className="mx-auto w-full max-w-[110rem] space-y-5 p-4 sm:p-6 xl:p-7"><div className="space-y-5"><div className="space-y-2"><Skeleton className="h-4 w-28" /><Skeleton className="h-9 w-72" /><Skeleton className="h-4 w-56" /></div><Skeleton className="h-24" /><Skeleton className="h-64" /></div><div className="grid gap-4 lg:grid-cols-2"><Skeleton className="h-48" /><Skeleton className="h-48" /></div></main>;
 }
 
 function formatCompletedAt(value: string): string {
@@ -133,7 +133,7 @@ export function TodoCompletedTasksPage() {
   const selectedTaskWorkspace = (task: TodoTask) => workspaces.find((workspace) => workspace.id === task.workspace_id);
 
   return <>
-    <main className="mx-auto grid w-full max-w-[110rem] gap-5 p-4 sm:p-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(18rem,.8fr)] xl:p-7">
+    <main className="mx-auto w-full max-w-[110rem] space-y-5 p-4 sm:p-6 xl:p-7">
       <section className="min-w-0 space-y-5">
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Tarefas / Concluídas</p><h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Tarefas concluídas</h1><p className="mt-2 text-sm text-muted-foreground">Tudo o que você já realizou.</p></div>
@@ -163,13 +163,10 @@ export function TodoCompletedTasksPage() {
         </Card>
       </section>
 
-      <aside className="min-w-0 space-y-5">
-        <TodoCompletedProductivityChart data={metrics.daily} enoughData={metrics.denominator > 0} title="Evolução diária das tarefas" description={chartIsLimited ? "Últimos 30 dias · tarefas concluídas e planejadas" : `${periodLabel} · tarefas concluídas e planejadas`} />
-
-        <Card className="shadow-none"><CardHeader className="p-4 pb-3"><CardTitle className="text-base">Listas mais concluídas</CardTitle><CardDescription>Conclusões neste período por lista.</CardDescription></CardHeader><CardContent className="space-y-4 p-4 pt-0">{listSummaries.length ? listSummaries.map((item) => <div key={item.id} className="space-y-1.5"><div className="flex items-center justify-between gap-3 text-sm"><span className="truncate font-medium">{item.name}</span><span className="tabular-nums text-muted-foreground">{item.count}</span></div><Progress value={maxListCount ? item.count / maxListCount * 100 : 0} aria-label={`${item.name}: ${item.count} tarefas concluídas`} className="h-2" /></div>) : <p className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">As listas aparecerão aqui quando houver conclusões no período.</p>}</CardContent></Card>
-
-        <Card className="border-primary/20 bg-primary/5 shadow-none"><CardContent className="flex items-start gap-3 p-4"><span className="grid size-9 shrink-0 place-items-center rounded-lg bg-background text-primary"><CircleHelp aria-hidden="true" className="size-4" /></span><div><p className="text-sm font-semibold">Seu histórico permanece organizado</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">A taxa compara tarefas concluídas no período com tarefas previstas ou concluídas nele. Reabrir uma tarefa a remove deste histórico e registra a alteração.</p></div></CardContent></Card>
-      </aside>
+      {metrics.denominator > 0 || listSummaries.length > 0 ? <section className="grid min-w-0 gap-4 lg:grid-cols-2" aria-label="Resumo do período">
+        {metrics.denominator > 0 ? <TodoCompletedProductivityChart data={metrics.daily} enoughData title="Evolução diária das tarefas" description={chartIsLimited ? "Últimos 30 dias · tarefas concluídas e planejadas" : `${periodLabel} · tarefas concluídas e planejadas`} /> : null}
+        {listSummaries.length > 0 ? <Card className="shadow-none"><CardHeader className="p-4 pb-3"><CardTitle className="text-base">Listas mais concluídas</CardTitle><CardDescription>Conclusões neste período por lista.</CardDescription></CardHeader><CardContent className="space-y-4 p-4 pt-0">{listSummaries.map((item) => <div key={item.id} className="space-y-1.5"><div className="flex items-center justify-between gap-3 text-sm"><span className="truncate font-medium">{item.name}</span><span className="tabular-nums text-muted-foreground">{item.count}</span></div><Progress value={maxListCount ? item.count / maxListCount * 100 : 0} aria-label={`${item.name}: ${item.count} tarefas concluídas`} className="h-2" /></div>)}</CardContent></Card> : null}
+      </section> : null}
     </main>
 
     <TodoTaskDetailsSheet task={activeTask} list={activeList} workspace={activeWorkspace} lists={lists} workspaces={workspaces} onSelectTask={setSelectedTaskId} onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }} onSaved={refreshAll} />
